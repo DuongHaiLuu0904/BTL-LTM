@@ -188,6 +188,20 @@ public class UserDAO {
         return false;
     }
     
+    // Reset all users to offline (called when server starts)
+    public boolean resetAllUsersToOffline() {
+        String sql = "UPDATE users SET is_online = FALSE, is_busy = FALSE";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            int updated = stmt.executeUpdate();
+            System.out.println("Reset " + updated + " users to offline status");
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     // Helper method to extract User from ResultSet
     private User extractUserFromResultSet(ResultSet rs) throws SQLException {
         User user = new User();

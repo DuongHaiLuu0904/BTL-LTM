@@ -156,7 +156,8 @@ public class ClientHandler implements Runnable {
     }
     
     private void handleGetOnlineUsers() {
-        List<User> onlineUsers = userDAO.getOnlineUsers();
+        // Get users that are actually connected to server
+        List<User> onlineUsers = server.getOnlineUsers();
         sendMessage(new Message(Message.ONLINE_USERS_LIST, onlineUsers));
     }
     

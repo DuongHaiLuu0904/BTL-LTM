@@ -1,12 +1,15 @@
 package com.example.tcp;
 
 import com.example.model.Message;
+import com.example.model.User;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +51,10 @@ public class GameServer {
     
     public GameServer() {
         clients = new ConcurrentHashMap<>();
+        
+        // Reset all users to offline when server starts
+        com.example.controller.UserDAO userDAO = new com.example.controller.UserDAO();
+        userDAO.resetAllUsersToOffline();
     }
     
     public void start() {
@@ -109,6 +116,17 @@ public class GameServer {
     
     public boolean isUserOnline(int userId) {
         return clients.containsKey(userId);
+    }
+    
+    public List<User> getOnlineUsers() {
+        List<User> onlineUsers = new ArrayList<>();
+        for (ClientHandler handler : clients.values()) {
+            User user = handler.getCurrentUser();
+            if (user != null) {
+                onlineUsers.add(user);
+            }
+        }
+        return onlineUsers;
     }
     
     public void broadcastUserStatusChange() {

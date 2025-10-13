@@ -105,6 +105,10 @@ public class GameClient {
         }
     }
     
+    public void setMessageHandler(Consumer<Message> messageHandler) {
+        this.messageHandler = messageHandler;
+    }
+    
     public void disconnect() {
         isConnected = false;
         try {

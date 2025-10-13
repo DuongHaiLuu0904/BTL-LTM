@@ -31,6 +31,11 @@ public class LobbyView extends JFrame {
         setLocationRelativeTo(null);
         
         initComponents();
+        
+        // Set message handler for this view
+        client.setMessageHandler(this::handleServerMessage);
+        
+        // Request online users immediately
         requestOnlineUsers();
         
         // Auto refresh every 5 seconds
@@ -72,8 +77,8 @@ public class LobbyView extends JFrame {
         listLabel.setHorizontalAlignment(SwingConstants.CENTER);
         centerPanel.add(listLabel, BorderLayout.NORTH);
         
-        // Table
-        String[] columnNames = {"Tên người chơi", "Tổng điểm", "Thắng", "Trạng thái"};
+        // Table (5 columns, last one hidden for userId)
+        String[] columnNames = {"Tên người chơi", "Tổng điểm", "Thắng", "Trạng thái", "ID"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -85,6 +90,11 @@ public class LobbyView extends JFrame {
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         userTable.setRowHeight(25);
         userTable.getTableHeader().setReorderingAllowed(false);
+        
+        // Hide the ID column (index 4)
+        userTable.getColumnModel().getColumn(4).setMinWidth(0);
+        userTable.getColumnModel().getColumn(4).setMaxWidth(0);
+        userTable.getColumnModel().getColumn(4).setWidth(0);
         
         JScrollPane scrollPane = new JScrollPane(userTable);
         centerPanel.add(scrollPane, BorderLayout.CENTER);
@@ -113,13 +123,12 @@ public class LobbyView extends JFrame {
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
         
         add(mainPanel);
-        
-        // Set message handler
-        client = new GameClient(this::handleServerMessage);
     }
     
     private void requestOnlineUsers() {
-        client.sendMessage(new Message(Message.GET_ONLINE_USERS));
+        if (client != null) {
+            client.sendMessage(new Message(Message.GET_ONLINE_USERS));
+        }
     }
     
     private void handleChallenge() {
@@ -237,13 +246,6 @@ public class LobbyView extends JFrame {
                     user.getUserId() // Hidden column for user ID
                 });
             }
-        }
-        
-        // Hide user ID column
-        if (userTable.getColumnCount() > 4) {
-            userTable.getColumnModel().getColumn(4).setMinWidth(0);
-            userTable.getColumnModel().getColumn(4).setMaxWidth(0);
-            userTable.getColumnModel().getColumn(4).setWidth(0);
         }
     }
     
