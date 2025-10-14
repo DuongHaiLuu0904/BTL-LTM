@@ -50,8 +50,8 @@ public class GameView extends JFrame {
         initComponents();
         updateGameState();
         
-        // Set message handler
-        client = new GameClient(this::handleServerMessage);
+        // Set message handler for this view
+        client.setMessageHandler(this::handleServerMessage);
         
         addWindowListener(new WindowAdapter() {
             @Override
