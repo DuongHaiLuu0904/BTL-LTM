@@ -8,11 +8,12 @@ import java.util.List;
 public class UserDAO {
     private Connection connection;
     
+    // Constructor khởi tạo kết nối database
     public UserDAO() {
         this.connection = DatabaseConnection.getInstance().getConnection();
     }
     
-    // Register new user
+    // Đăng ký người dùng mới
     public boolean registerUser(String username, String password) {
         String sql = "INSERT INTO users (username, password, total_score, total_wins, total_losses, total_draws, is_online, is_busy) VALUES (?, ?, 0, 0, 0, 0, FALSE, FALSE)";
         
@@ -27,7 +28,7 @@ public class UserDAO {
         }
     }
     
-    // Login user
+    // Đăng nhập người dùng
     public User loginUser(String username, String password) {
         String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
         
@@ -38,7 +39,7 @@ public class UserDAO {
             
             if (rs.next()) {
                 User user = extractUserFromResultSet(rs);
-                // Update online status
+                // Cập nhật trạng thái online
                 updateOnlineStatus(user.getUserId(), true);
                 user.setOnline(true);
                 return user;
@@ -49,12 +50,12 @@ public class UserDAO {
         return null;
     }
     
-    // Logout user
+    // Đăng xuất người dùng
     public boolean logoutUser(int userId) {
         return updateOnlineStatus(userId, false);
     }
     
-    // Update online status
+    // Cập nhật trạng thái online
     public boolean updateOnlineStatus(int userId, boolean isOnline) {
         String sql = "UPDATE users SET is_online = ? WHERE user_id = ?";
         
@@ -68,7 +69,7 @@ public class UserDAO {
         }
     }
     
-    // Update busy status
+    // Cập nhật trạng thái bận
     public boolean updateBusyStatus(int userId, boolean isBusy) {
         String sql = "UPDATE users SET is_busy = ? WHERE user_id = ?";
         
@@ -82,7 +83,7 @@ public class UserDAO {
         }
     }
     
-    // Get all online users
+    // Lấy danh sách tất cả người dùng online
     public List<User> getOnlineUsers() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users WHERE is_online = TRUE ORDER BY username";
@@ -99,7 +100,7 @@ public class UserDAO {
         return users;
     }
     
-    // Get user by ID
+    // Lấy người dùng theo ID
     public User getUserById(int userId) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
         
@@ -116,7 +117,7 @@ public class UserDAO {
         return null;
     }
     
-    // Update user statistics after game
+    // Cập nhật thống kê người dùng sau trận đấu
     public boolean updateUserStats(int userId, int scoreToAdd, String result) {
         String sql = "UPDATE users SET total_score = total_score + ?, " +
                     "total_wins = total_wins + ?, " +
@@ -127,11 +128,11 @@ public class UserDAO {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, scoreToAdd);
             
-            // Update wins, losses, draws based on result
+            // Cập nhật thắng, thua, hòa dựa trên kết quả
             if ("WIN".equals(result)) {
-                stmt.setInt(2, 1);  // wins
-                stmt.setInt(3, 0);  // losses
-                stmt.setInt(4, 0);  // draws
+                stmt.setInt(2, 1);  // thắng
+                stmt.setInt(3, 0);  // thua
+                stmt.setInt(4, 0);  // hòa
             } else if ("LOSS".equals(result)) {
                 stmt.setInt(2, 0);
                 stmt.setInt(3, 1);
@@ -154,7 +155,7 @@ public class UserDAO {
         }
     }
     
-    // Get leaderboard
+    // Lấy bảng xếp hạng
     public List<User> getLeaderboard() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users ORDER BY total_score DESC, total_wins DESC, username ASC";
@@ -171,7 +172,7 @@ public class UserDAO {
         return users;
     }
     
-    // Check if username exists
+    // Kiểm tra xem tên đăng nhập đã tồn tại chưa
     public boolean usernameExists(String username) {
         String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
         
@@ -188,7 +189,7 @@ public class UserDAO {
         return false;
     }
     
-    // Reset all users to offline (called when server starts)
+    // Đặt lại tất cả người dùng về offline (được gọi khi server khởi động)
     public boolean resetAllUsersToOffline() {
         String sql = "UPDATE users SET is_online = FALSE, is_busy = FALSE";
         
@@ -202,7 +203,7 @@ public class UserDAO {
         }
     }
     
-    // Helper method to extract User from ResultSet
+    // Phương thức trợ giúp để trích xuất User từ ResultSet
     private User extractUserFromResultSet(ResultSet rs) throws SQLException {
         User user = new User();
         user.setUserId(rs.getInt("user_id"));

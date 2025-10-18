@@ -27,13 +27,13 @@ public class GameServer {
     private static void loadProperties() {
         Properties properties = new Properties();
         
-        // Try to load from root directory first
+        // Thử tải từ thư mục gốc trước
         try (InputStream input = new FileInputStream("application.properties")) {
             properties.load(input);
             PORT = Integer.parseInt(properties.getProperty("server.port", "5000"));
             System.out.println("Loaded server configuration from application.properties");
         } catch (IOException | NumberFormatException e) {
-            // Try to load from classpath
+            // Thử tải từ classpath
             try (InputStream input = GameServer.class.getClassLoader()
                     .getResourceAsStream("application.properties")) {
                 if (input != null) {
@@ -49,14 +49,16 @@ public class GameServer {
         }
     }
     
+    // Constructor khởi tạo server và reset trạng thái users
     public GameServer() {
         clients = new ConcurrentHashMap<>();
         
-        // Reset all users to offline when server starts
+        // Đặt lại tất cả users về offline khi server khởi động
         com.example.controller.UserDAO userDAO = new com.example.controller.UserDAO();
         userDAO.resetAllUsersToOffline();
     }
     
+    // Khởi động server và lắng nghe kết nối từ clients
     public void start() {
         try {
             serverSocket = new ServerSocket(PORT);
@@ -83,13 +85,14 @@ public class GameServer {
         }
     }
     
+    // Dừng server và ngắt kết nối tất cả clients
     public void stop() {
         isRunning = false;
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
-            // Disconnect all clients
+            // Ngắt kết nối tất cả clients
             for (ClientHandler handler : clients.values()) {
                 handler.sendMessage(new Message(Message.ERROR, "Server is shutting down"));
             }
@@ -100,24 +103,29 @@ public class GameServer {
         }
     }
     
+    // Thêm client mới vào danh sách quản lý
     public void addClient(int userId, ClientHandler handler) {
         clients.put(userId, handler);
         System.out.println("Client added: " + userId + " (Total: " + clients.size() + ")");
     }
     
+    // Xóa client khỏi danh sách quản lý
     public void removeClient(int userId) {
         clients.remove(userId);
         System.out.println("Client removed: " + userId + " (Total: " + clients.size() + ")");
     }
     
+    // Lấy ClientHandler theo userId
     public ClientHandler getClientHandler(int userId) {
         return clients.get(userId);
     }
     
+    // Kiểm tra xem user có đang online không
     public boolean isUserOnline(int userId) {
         return clients.containsKey(userId);
     }
     
+    // Lấy danh sách tất cả users đang online
     public List<User> getOnlineUsers() {
         List<User> onlineUsers = new ArrayList<>();
         for (ClientHandler handler : clients.values()) {
@@ -129,6 +137,7 @@ public class GameServer {
         return onlineUsers;
     }
     
+    // Phát sóng thông báo thay đổi trạng thái user đến tất cả clients
     public void broadcastUserStatusChange() {
         Message msg = new Message(Message.USER_STATUS_CHANGED);
         for (ClientHandler handler : clients.values()) {
@@ -136,6 +145,7 @@ public class GameServer {
         }
     }
     
+    // Phát sóng message đến tất cả clients
     public void broadcastMessage(Message message) {
         for (ClientHandler handler : clients.values()) {
             handler.sendMessage(message);
@@ -145,7 +155,7 @@ public class GameServer {
     public static void main(String[] args) {
         GameServer server = new GameServer();
         
-        // Add shutdown hook
+        // Thêm shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\nShutting down server...");
             server.stop();

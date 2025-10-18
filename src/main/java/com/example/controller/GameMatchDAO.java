@@ -8,11 +8,12 @@ import java.util.List;
 public class GameMatchDAO {
     private Connection connection;
     
+    // Constructor khởi tạo kết nối database
     public GameMatchDAO() {
         this.connection = DatabaseConnection.getInstance().getConnection();
     }
     
-    // Create new game match
+    // Tạo trận đấu mới
     public int createMatch(int player1Id, int player2Id) {
         String sql = "INSERT INTO game_matches (player1_id, player2_id, player1_score, player2_score, " +
                     "current_player_id, player1_throws_left, player2_throws_left, board_rotation, " +
@@ -33,10 +34,10 @@ public class GameMatchDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return -1;
+        return 0;
     }
     
-    // Get match by ID
+    // Lấy trận đấu theo ID
     public GameMatch getMatchById(int matchId) {
         String sql = "SELECT * FROM game_matches WHERE match_id = ?";
         
@@ -53,7 +54,7 @@ public class GameMatchDAO {
         return null;
     }
     
-    // Get active match for player
+    // Lấy trận đấu đang hoạt động cho người chơi
     public GameMatch getActiveMatchForPlayer(int playerId) {
         String sql = "SELECT * FROM game_matches WHERE (player1_id = ? OR player2_id = ?) " +
                     "AND status = 'PLAYING'";
@@ -72,7 +73,7 @@ public class GameMatchDAO {
         return null;
     }
     
-    // Update match state
+    // Cập nhật trạng thái trận đấu
     public boolean updateMatchState(GameMatch match) {
         String sql = "UPDATE game_matches SET player1_score = ?, player2_score = ?, " +
                     "current_player_id = ?, player1_throws_left = ?, player2_throws_left = ?, " +
@@ -136,12 +137,12 @@ public class GameMatchDAO {
         return matches;
     }
     
-    // Cancel match
+    // Hủy trận đấu
     public boolean cancelMatch(int matchId) {
         return endMatch(matchId, 0, "CANCELLED");
     }
     
-    // Helper method to extract GameMatch from ResultSet
+    // Phương thức trợ giúp để trích xuất GameMatch từ ResultSet
     private GameMatch extractMatchFromResultSet(ResultSet rs) throws SQLException {
         GameMatch match = new GameMatch();
         match.setMatchId(rs.getInt("match_id"));

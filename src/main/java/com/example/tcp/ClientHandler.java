@@ -20,6 +20,7 @@ public class ClientHandler implements Runnable {
     private UserDAO userDAO;
     private GameMatchDAO gameMatchDAO;
     
+    // Constructor khởi tạo handler cho client mới
     public ClientHandler(Socket socket, GameServer server) {
         this.socket = socket;
         this.server = server;
@@ -35,6 +36,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Phương thức chính chạy luồng xử lý client
     @Override
     public void run() {
         try {
@@ -50,6 +52,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý message từ client dựa trên loại message
     private void handleMessage(Message message) {
         try {
             switch (message.getType()) {
@@ -98,6 +101,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý yêu cầu đăng nhập
     private void handleLogin(Message message) {
         String[] credentials = ((String) message.getData()).split(":");
         String username = credentials[0];
@@ -106,7 +110,7 @@ public class ClientHandler implements Runnable {
         User user = userDAO.loginUser(username, password);
         
         if (user != null) {
-            // Check if user is already logged in
+            // Kiểm tra xem user đã đăng nhập ở nơi khác chưa
             if (server.isUserOnline(user.getUserId())) {
                 sendMessage(new Message(Message.LOGIN_FAILED, 
                     "Tài khoản đang được đăng nhập ở nơi khác!"));
@@ -124,6 +128,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý yêu cầu đăng ký tài khoản mới
     private void handleRegister(Message message) {
         String[] credentials = ((String) message.getData()).split(":");
         String username = credentials[0];
@@ -145,6 +150,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý yêu cầu đăng xuất
     private void handleLogout() {
         if (currentUser != null) {
             userDAO.logoutUser(currentUser.getUserId());
@@ -155,12 +161,14 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý yêu cầu lấy danh sách người chơi online
     private void handleGetOnlineUsers() {
-        // Get users that are actually connected to server
+        // Lấy danh sách users đang thực sự kết nối với server
         List<User> onlineUsers = server.getOnlineUsers();
         sendMessage(new Message(Message.ONLINE_USERS_LIST, onlineUsers));
     }
     
+    // Xử lý yêu cầu thách đấu từ người chơi
     private void handleChallengeRequest(Message message) {
         int opponentId = (int) message.getData();
         ClientHandler opponentHandler = server.getClientHandler(opponentId);
@@ -181,6 +189,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý phản hồi thách đấu (chấp nhận hoặc từ chối)
     private void handleChallengeResponse(Message message) {
         String response = (String) message.getData();
         int challengerId = message.getReceiverId();
@@ -188,21 +197,21 @@ public class ClientHandler implements Runnable {
         
         if (challengerHandler != null) {
             if ("ACCEPTED".equals(response)) {
-                // Create game match
+                // Tạo trận đấu mới
                 int matchId = gameMatchDAO.createMatch(challengerId, currentUser.getUserId());
                 
                 if (matchId > 0) {
                     GameMatch match = gameMatchDAO.getMatchById(matchId);
                     
-                    // Update busy status for both players
+                    // Cập nhật trạng thái bận cho cả hai người chơi
                     userDAO.updateBusyStatus(challengerId, true);
                     userDAO.updateBusyStatus(currentUser.getUserId(), true);
                     
-                    // Notify both players
+                    // Thông báo cho cả hai người chơi
                     challengerHandler.sendMessage(new Message(Message.GAME_START, match));
                     sendMessage(new Message(Message.GAME_START, match));
                     
-                    // Broadcast status change
+                    // Phát sóng thay đổi trạng thái
                     server.broadcastUserStatusChange();
                 }
             } else {
@@ -212,6 +221,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý hành động ném phi tiêu của người chơi
     private void handleThrowDart(Message message) {
         ThrowResult throwResult = (ThrowResult) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
@@ -221,22 +231,22 @@ public class ClientHandler implements Runnable {
             return;
         }
         
-        // Verify it's player's turn
+        // Xác minh đến lượt của người chơi
         if (match.getCurrentPlayerId() != currentUser.getUserId()) {
             sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn!"));
             return;
         }
         
-        // Calculate score based on position
+        // Tính điểm dựa trên vị trí
         int score = calculateScore(throwResult.getX(), throwResult.getY(), 
             match.getBoardRotation());
         throwResult.setScore(score);
         
-        // Update match state
+        // Cập nhật trạng thái trận đấu
         match.addScore(currentUser.getUserId(), score);
         match.decrementThrows(currentUser.getUserId());
         
-        // Send throw result to both players
+        // Gửi kết quả ném cho cả hai người chơi
         int opponentId = (match.getPlayer1Id() == currentUser.getUserId()) 
             ? match.getPlayer2Id() : match.getPlayer1Id();
         ClientHandler opponentHandler = server.getClientHandler(opponentId);
@@ -246,14 +256,14 @@ public class ClientHandler implements Runnable {
             opponentHandler.sendMessage(new Message(Message.THROW_RESULT, throwResult));
         }
         
-        // Check if game is over
+        // Kiểm tra xem trò chơi đã kết thúc chưa
         if (match.isGameOver()) {
             handleGameOver(match);
         } else {
-            // Don't switch turn yet - allow current player to rotate board
+            // Chưa chuyển lượt - cho phép người chơi hiện tại xoay bảng
             gameMatchDAO.updateMatchState(match);
             
-            // Send updated game state
+            // Gửi trạng thái game đã cập nhật
             sendMessage(new Message(Message.GAME_STATE, match));
             if (opponentHandler != null) {
                 opponentHandler.sendMessage(new Message(Message.GAME_STATE, match));
@@ -261,16 +271,17 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý xoay bảng phi tiêu sau khi ném
     private void handleRotateBoard(Message message) {
         int rotation = (int) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
         
         if (match != null) {
             match.setBoardRotation(rotation);
-            match.switchPlayer(); // Now switch to opponent's turn
+            match.switchPlayer(); // Bây giờ chuyển sang lượt của đối thủ
             gameMatchDAO.updateMatchState(match);
             
-            // Notify both players
+            // Thông báo cho cả hai người chơi
             int opponentId = (match.getPlayer1Id() == currentUser.getUserId()) 
                 ? match.getPlayer2Id() : match.getPlayer1Id();
             ClientHandler opponentHandler = server.getClientHandler(opponentId);
@@ -283,6 +294,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý khi trò chơi kết thúc và tính toán kết quả
     private void handleGameOver(GameMatch match) {
         int winnerId = 0;
         String result1 = "", result2 = "";
@@ -300,7 +312,7 @@ public class ClientHandler implements Runnable {
             result1 = "LOSS";
             result2 = "WIN";
         } else {
-            // Draw
+            // Hòa
             userDAO.updateUserStats(match.getPlayer1Id(), 1, "DRAW");
             userDAO.updateUserStats(match.getPlayer2Id(), 1, "DRAW");
             result1 = "DRAW";
@@ -309,11 +321,11 @@ public class ClientHandler implements Runnable {
         
         gameMatchDAO.endMatch(match.getMatchId(), winnerId, "FINISHED");
         
-        // Update busy status
+        // Cập nhật trạng thái bận
         userDAO.updateBusyStatus(match.getPlayer1Id(), false);
         userDAO.updateBusyStatus(match.getPlayer2Id(), false);
         
-        // Notify both players
+        // Thông báo cho cả hai người chơi
         ClientHandler player1Handler = server.getClientHandler(match.getPlayer1Id());
         ClientHandler player2Handler = server.getClientHandler(match.getPlayer2Id());
         
@@ -329,6 +341,7 @@ public class ClientHandler implements Runnable {
         server.broadcastUserStatusChange();
     }
     
+    // Xử lý khi người chơi thoát game giữa chừng
     private void handleExitGame() {
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
         
@@ -337,16 +350,16 @@ public class ClientHandler implements Runnable {
                 ? match.getPlayer2Id() : match.getPlayer1Id();
             ClientHandler opponentHandler = server.getClientHandler(opponentId);
             
-            // Determine winner (opponent wins)
+            // Xác định người thắng (đối thủ thắng)
             userDAO.updateUserStats(opponentId, 3, "WIN");
             userDAO.updateUserStats(currentUser.getUserId(), 0, "LOSS");
             gameMatchDAO.endMatch(match.getMatchId(), opponentId, "FINISHED");
             
-            // Update busy status
+            // Cập nhật trạng thái bận
             userDAO.updateBusyStatus(match.getPlayer1Id(), false);
             userDAO.updateBusyStatus(match.getPlayer2Id(), false);
             
-            // Notify opponent
+            // Thông báo cho đối thủ
             if (opponentHandler != null) {
                 opponentHandler.sendMessage(new Message(Message.OPPONENT_LEFT, 
                     currentUser.getUsername() + " đã thoát. Bạn thắng!"));
@@ -356,6 +369,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý yêu cầu chơi lại từ người chơi
     private void handleRematchRequest(Message message) {
         int opponentId = (int) message.getData();
         ClientHandler opponentHandler = server.getClientHandler(opponentId);
@@ -366,6 +380,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý phản hồi yêu cầu chơi lại
     private void handleRematchResponse(Message message) {
         String response = (String) message.getData();
         int requesterId = message.getReceiverId();
@@ -373,17 +388,17 @@ public class ClientHandler implements Runnable {
         
         if (requesterHandler != null) {
             if ("ACCEPTED".equals(response)) {
-                // Create new game match
+                // Tạo trận đấu mới
                 int matchId = gameMatchDAO.createMatch(requesterId, currentUser.getUserId());
                 
                 if (matchId > 0) {
                     GameMatch match = gameMatchDAO.getMatchById(matchId);
                     
-                    // Update busy status
+                    // Cập nhật trạng thái bận
                     userDAO.updateBusyStatus(requesterId, true);
                     userDAO.updateBusyStatus(currentUser.getUserId(), true);
                     
-                    // Notify both players
+                    // Thông báo cho cả hai người chơi
                     requesterHandler.sendMessage(new Message(Message.GAME_START, match));
                     sendMessage(new Message(Message.GAME_START, match));
                     
@@ -396,50 +411,53 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Xử lý yêu cầu lấy bảng xếp hạng
     private void handleGetLeaderboard() {
         List<User> leaderboard = userDAO.getLeaderboard();
         sendMessage(new Message(Message.LEADERBOARD_DATA, leaderboard));
     }
     
+    // Tính điểm dựa trên vị trí phi tiêu đâm vào bảng
     private int calculateScore(double x, double y, int rotation) {
-        // Calculate distance from center
+        // Tính khoảng cách từ tâm
         double distance = Math.sqrt(x * x + y * y);
         
-        // Dartboard zones (simplified)
-        // Bullseye (center): 50 points
-        // Inner bull: 25 points
-        // Triple ring: base * 3
-        // Double ring: base * 2
-        // Single area: base value
+        // Các vùng trên bảng phi tiêu (đơn giản hóa)
+        // Bullseye (tâm): 50 điểm
+        // Vòng trong: 25 điểm
+        // Vòng ba lần: điểm cơ sở * 3
+        // Vòng hai lần: điểm cơ sở * 2
+        // Vùng đơn: điểm cơ sở
         
         if (distance <= 12.7) {
             return 50; // Bullseye
         } else if (distance <= 31.8) {
-            return 25; // Inner bull
+            return 25; // Vòng trong
         } else if (distance <= 170) {
-            // Calculate angle and determine segment value
+            // Tính góc và xác định giá trị phân đoạn
             double angle = Math.toDegrees(Math.atan2(y, x));
             angle = (angle + rotation) % 360;
             if (angle < 0) angle += 360;
             
-            // Standard dartboard segments: 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5
+            // Các phân đoạn tiêu chuẩn trên bảng phi tiêu: 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5
             int[] segments = {20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5};
             int segmentIndex = (int) (angle / 18) % 20;
             int baseValue = segments[segmentIndex];
             
-            // Determine ring
+            // Xác định vòng
             if (distance >= 99 && distance <= 107) {
-                return baseValue * 3; // Triple ring
+                return baseValue * 3; // Vòng ba lần
             } else if (distance >= 162 && distance <= 170) {
-                return baseValue * 2; // Double ring
+                return baseValue * 2; // Vòng hai lần
             } else {
-                return baseValue; // Single area
+                return baseValue; // Vùng đơn
             }
         }
         
-        return 0; // Miss
+        return 0; // Trượt
     }
     
+    // Gửi message đến client
     public void sendMessage(Message message) {
         try {
             out.writeObject(message);
@@ -449,6 +467,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Dọn dẹp và đóng kết nối khi client ngắt kết nối
     private void cleanup() {
         handleLogout();
         try {
@@ -460,6 +479,7 @@ public class ClientHandler implements Runnable {
         }
     }
     
+    // Lấy thông tin user hiện tại đang kết nối
     public User getCurrentUser() {
         return currentUser;
     }
