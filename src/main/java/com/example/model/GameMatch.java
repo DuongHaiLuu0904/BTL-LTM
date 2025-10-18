@@ -174,4 +174,18 @@ public class GameMatch implements Serializable {
             player2Score += score;
         }
     }
+    
+    public void throwDart(int playerId, int score) {
+        addScore(playerId, score);
+        decrementThrows(playerId);
+        switchPlayer();
+    }
+    
+    public boolean hasThrowsLeft(int playerId) {
+        return playerId == player1Id ? player1ThrowsLeft > 0 : player2ThrowsLeft > 0;
+    }
+    
+    public boolean isPlayerInMatch(int playerId) {
+        return playerId == player1Id || playerId == player2Id;
+    }
 }
