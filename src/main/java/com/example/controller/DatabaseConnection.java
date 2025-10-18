@@ -29,6 +29,8 @@ public class DatabaseConnection {
             URL = properties.getProperty("db.url");
             USERNAME = properties.getProperty("db.username");
             PASSWORD = properties.getProperty("db.password");
+            System.out.println(USERNAME);
+            System.out.println(PASSWORD);
             System.out.println("Loaded database configuration from application.properties");
         } catch (IOException e) {
             // Try to load from classpath
@@ -45,9 +47,9 @@ public class DatabaseConnection {
                 }
             } catch (IOException ex) {
                 System.err.println("Failed to load application.properties, using defaults");
-                URL = "jdbc:mysql://localhost:3306/dart_game?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+                URL = "jdbc:mysql://localhost:3306/gameLTM?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
                 USERNAME = "root";
-                PASSWORD = "09042004";
+                PASSWORD = "root1234";
             }
         }
     }
