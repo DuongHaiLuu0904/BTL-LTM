@@ -21,17 +21,18 @@ public class GameClient {
         loadProperties();
     }
     
+    // Tải cấu hình kết nối từ file properties
     private static void loadProperties() {
         Properties properties = new Properties();
         
-        // Try to load from root directory first
+        // Thử tải từ thư mục gốc trước
         try (InputStream input = new FileInputStream("application.properties")) {
             properties.load(input);
             SERVER_HOST = properties.getProperty("server.host", "localhost");
             SERVER_PORT = Integer.parseInt(properties.getProperty("server.port", "5000"));
             System.out.println("Loaded client configuration from application.properties");
         } catch (IOException | NumberFormatException e) {
-            // Try to load from classpath
+            // Thử tải từ classpath
             try (InputStream input = GameClient.class.getClassLoader()
                     .getResourceAsStream("application.properties")) {
                 if (input != null) {
@@ -48,10 +49,12 @@ public class GameClient {
         }
     }
     
+    // Constructor khởi tạo client với message handler
     public GameClient(Consumer<Message> messageHandler) {
         this.messageHandler = messageHandler;
     }
     
+    // Kết nối đến server
     public boolean connect() {
         try {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
@@ -60,7 +63,7 @@ public class GameClient {
             in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
             
-            // Start listening for messages
+            // Bắt đầu lắng nghe messages
             Thread listenerThread = new Thread(this::listenForMessages);
             listenerThread.setDaemon(true);
             listenerThread.start();
@@ -73,6 +76,7 @@ public class GameClient {
         }
     }
     
+    // Lắng nghe messages từ server
     private void listenForMessages() {
         try {
             while (isConnected) {
@@ -93,6 +97,7 @@ public class GameClient {
         }
     }
     
+    // Gửi message đến server
     public void sendMessage(Message message) {
         try {
             if (out != null && isConnected) {
@@ -105,10 +110,12 @@ public class GameClient {
         }
     }
     
+    // Đặt message handler mới cho client
     public void setMessageHandler(Consumer<Message> messageHandler) {
         this.messageHandler = messageHandler;
     }
     
+    // Ngắt kết nối khỏi server
     public void disconnect() {
         isConnected = false;
         try {
@@ -121,6 +128,7 @@ public class GameClient {
         }
     }
     
+    // Kiểm tra xem client có đang kết nối không
     public boolean isConnected() {
         return isConnected && socket != null && !socket.isClosed();
     }

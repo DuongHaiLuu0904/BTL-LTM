@@ -22,7 +22,7 @@ public class LoginView extends JFrame {
         
         initComponents();
         
-        // Connect to server
+        // Kết nối đến server
         client = new GameClient(this::handleServerMessage);
         if (!client.connect()) {
             JOptionPane.showMessageDialog(this, 
@@ -37,12 +37,12 @@ public class LoginView extends JFrame {
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        // Title
+        // Tiêu đề
         JLabel titleLabel = new JLabel("GAME NÉM PHI TIÊU", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
         
-        // Form panel
+        // Panel form
         JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         
         formPanel.add(new JLabel("Tên đăng nhập:"));
@@ -55,7 +55,7 @@ public class LoginView extends JFrame {
         
         mainPanel.add(formPanel, BorderLayout.CENTER);
         
-        // Button panel
+        // Panel nút bấm
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         
         loginButton = new JButton("Đăng nhập");
@@ -70,7 +70,7 @@ public class LoginView extends JFrame {
         
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
         
-        // Add enter key listener
+        // Thêm listener phím Enter
         passwordField.addActionListener(e -> handleLogin());
         
         add(mainPanel);

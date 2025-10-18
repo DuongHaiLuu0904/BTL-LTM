@@ -32,17 +32,17 @@ public class LobbyView extends JFrame {
         
         initComponents();
         
-        // Set message handler for this view
+        // Đặt message handler cho view này
         client.setMessageHandler(this::handleServerMessage);
         
-        // Request online users immediately
+        // Yêu cầu danh sách người chơi online ngay lập tức
         requestOnlineUsers();
         
-        // Auto refresh every 5 seconds
+        // Tự động làm mới mỗi 5 giây
         refreshTimer = new Timer(5000, e -> requestOnlineUsers());
         refreshTimer.start();
         
-        // Add window closing listener
+        // Thêm listener đóng cửa sổ
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
@@ -55,7 +55,7 @@ public class LobbyView extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Top panel - User info
+        // Panel trên - Thông tin người dùng
         JPanel topPanel = new JPanel(new BorderLayout());
         userInfoLabel = new JLabel(String.format(
             "Người chơi: %s | Điểm: %d | Thắng: %d | Thua: %d | Hòa: %d",
@@ -70,14 +70,14 @@ public class LobbyView extends JFrame {
         
         mainPanel.add(topPanel, BorderLayout.NORTH);
         
-        // Center panel - User list
+        // Panel giữa - Danh sách người chơi
         JPanel centerPanel = new JPanel(new BorderLayout());
         JLabel listLabel = new JLabel("DANH SÁCH NGƯỜI CHƠI ONLINE");
         listLabel.setFont(new Font("Arial", Font.BOLD, 16));
         listLabel.setHorizontalAlignment(SwingConstants.CENTER);
         centerPanel.add(listLabel, BorderLayout.NORTH);
         
-        // Table (5 columns, last one hidden for userId)
+        // Bảng (5 cột, cột cuối ẩn cho userId)
         String[] columnNames = {"Tên người chơi", "Tổng điểm", "Thắng", "Trạng thái", "ID"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -91,7 +91,7 @@ public class LobbyView extends JFrame {
         userTable.setRowHeight(25);
         userTable.getTableHeader().setReorderingAllowed(false);
         
-        // Hide the ID column (index 4)
+        // Ẩn cột ID (index 4)
         userTable.getColumnModel().getColumn(4).setMinWidth(0);
         userTable.getColumnModel().getColumn(4).setMaxWidth(0);
         userTable.getColumnModel().getColumn(4).setWidth(0);
@@ -101,7 +101,7 @@ public class LobbyView extends JFrame {
         
         mainPanel.add(centerPanel, BorderLayout.CENTER);
         
-        // Bottom panel - Buttons
+        // Panel dưới - Các nút bấm
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         
         refreshButton = new JButton("Làm mới");
@@ -156,8 +156,8 @@ public class LobbyView extends JFrame {
             return;
         }
         
-        // Get user ID from username (stored in table)
-        int opponentId = (int) tableModel.getValueAt(selectedRow, 4); // Hidden column
+        // Lấy user ID từ username (lưu trong bảng)
+        int opponentId = (int) tableModel.getValueAt(selectedRow, 4); // Cột ẩn
         
         int confirm = JOptionPane.showConfirmDialog(this, 
             "Bạn có muốn thách đấu " + selectedUsername + "?",
@@ -243,7 +243,7 @@ public class LobbyView extends JFrame {
                     user.getTotalScore(),
                     user.getTotalWins(),
                     user.getStatus(),
-                    user.getUserId() // Hidden column for user ID
+                    user.getUserId() // Cột ẩn cho user ID
                 });
             }
         }

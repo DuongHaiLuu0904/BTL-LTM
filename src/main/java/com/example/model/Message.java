@@ -10,24 +10,29 @@ public class Message implements Serializable {
     private int senderId;
     private int receiverId;
     
+    // Constructor mặc định
     public Message() {
     }
     
+    // Constructor với loại message
     public Message(String type) {
         this.type = type;
     }
     
+    // Constructor với loại và dữ liệu
     public Message(String type, Object data) {
         this.type = type;
         this.data = data;
     }
     
+    // Constructor với loại, dữ liệu và người gửi
     public Message(String type, Object data, int senderId) {
         this.type = type;
         this.data = data;
         this.senderId = senderId;
     }
     
+    // Constructor đầy đủ với loại, dữ liệu, người gửi và người nhận
     public Message(String type, Object data, int senderId, int receiverId) {
         this.type = type;
         this.data = data;
@@ -66,34 +71,42 @@ public class Message implements Serializable {
     public static final String ERROR = "ERROR";
     
     // Getters and Setters
+    // Lấy loại message
     public String getType() {
         return type;
     }
     
+    // Đặt loại message
     public void setType(String type) {
         this.type = type;
     }
     
+    // Lấy dữ liệu message
     public Object getData() {
         return data;
     }
     
+    // Đặt dữ liệu message
     public void setData(Object data) {
         this.data = data;
     }
     
+    // Lấy ID người gửi
     public int getSenderId() {
         return senderId;
     }
     
+    // Đặt ID người gửi
     public void setSenderId(int senderId) {
         this.senderId = senderId;
     }
     
+    // Lấy ID người nhận
     public int getReceiverId() {
         return receiverId;
     }
     
+    // Đặt ID người nhận
     public void setReceiverId(int receiverId) {
         this.receiverId = receiverId;
     }
