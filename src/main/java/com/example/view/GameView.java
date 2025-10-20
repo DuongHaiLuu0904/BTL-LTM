@@ -20,11 +20,15 @@ public class GameView extends JFrame {
     private JLabel player2Label;
     private JLabel turnLabel;
     private JLabel timerLabel;
-    private JSlider angleSlider;
+    private JSlider thetaSlider;   // Góc ném đứng (elevation)
+    private JSlider phiSlider;     // Góc ném ngang (horizontal)
     private JSlider powerSlider;
     private JButton throwButton;
     private JButton rotateButton;
     private JButton exitButton;
+    
+    // Legacy
+    private JSlider angleSlider;
 
     private Timer throwTimer;
     private Timer rotateTimer;
@@ -44,8 +48,19 @@ public class GameView extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        System.out.println("=== GameView Constructor ===");
+        System.out.println("Current user ID: " + currentUser.getUserId());
+        System.out.println("Match current turn: " + match.getCurrentPlayerId());
+        System.out.println("Is my turn: " + (match.getCurrentPlayerId() == currentUser.getUserId()));
+
         initComponents();
         updateGameState();
+        
+        // Enable throw cho người chơi đầu tiên (nếu là lượt của mình)
+        if (match.getCurrentPlayerId() == currentUser.getUserId() && match.hasThrowsLeft(currentUser.getUserId())) {
+            System.out.println("→ Enabling throw at game start");
+            enableThrow();
+        }
 
         client.setMessageHandler(this::handleServerMessage);
 
@@ -98,21 +113,40 @@ public class GameView extends JFrame {
         rightPanel.add(timerLabel);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
+        // Theta slider (góc ném đứng - elevation angle)
+        // Range: -10° to +10° for fine control, default = 0°
+        thetaSlider = new JSlider(-10, 10, 0);
+        thetaSlider.setMajorTickSpacing(5);
+        thetaSlider.setMinorTickSpacing(1);
+        thetaSlider.setPaintTicks(true);
+        thetaSlider.setPaintLabels(true);
+        thetaSlider.setBorder(BorderFactory.createTitledBorder("Góc nâng θ (-10° to +10°)"));
+        rightPanel.add(thetaSlider);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+
+        // Phi slider (góc ném ngang - horizontal angle)
+        // Range: -10° to +10° for fine control, default = 0°
+        phiSlider = new JSlider(-10, 10, 0);
+        phiSlider.setMajorTickSpacing(5);
+        phiSlider.setMinorTickSpacing(1);
+        phiSlider.setPaintTicks(true);
+        phiSlider.setPaintLabels(true);
+        phiSlider.setBorder(BorderFactory.createTitledBorder("Góc ngang φ (-10° to +10°)"));
+        rightPanel.add(phiSlider);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+
         // Power slider
-        powerSlider = new JSlider(0, 100, 50);
+        powerSlider = new JSlider(0, 100, 75);
         powerSlider.setMajorTickSpacing(25);
         powerSlider.setPaintTicks(true);
         powerSlider.setPaintLabels(true);
         powerSlider.setBorder(BorderFactory.createTitledBorder("Lực ném (%)"));
         rightPanel.add(powerSlider);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Angle slider
+        // Legacy angle slider (keep for backward compatibility)
         angleSlider = new JSlider(0, 360, 90);
-        angleSlider.setMajorTickSpacing(90);
-        angleSlider.setPaintTicks(true);
-        angleSlider.setPaintLabels(true);
-        angleSlider.setBorder(BorderFactory.createTitledBorder("Góc ném (°)"));
-        rightPanel.add(angleSlider);
+        angleSlider.setVisible(false);
 
         // Throw button
         throwButton = new JButton("NÉM");
@@ -149,14 +183,26 @@ public class GameView extends JFrame {
                 match.getPlayer2Score(), match.getPlayer2ThrowsLeft()));
 
         boolean isMyTurn = match.getCurrentPlayerId() == currentUser.getUserId();
-        if (isMyTurn) {
+        boolean hasThrowsLeft = match.hasThrowsLeft(currentUser.getUserId());
+        
+        System.out.println("--- updateGameState() ---");
+        System.out.println("Is my turn: " + isMyTurn + ", Has throws: " + hasThrowsLeft);
+        System.out.println("canRotate: " + canRotate + ", canThrow: " + canThrow);
+        
+        // CHỈ CẬP NHẬT LABEL, KHÔNG tự động enable/disable throw
+        // Việc enable throw được quản lý bởi TURN_CHANGED handler
+        if (isMyTurn && hasThrowsLeft) {
             turnLabel.setText("LƯỢT của bạn!");
             turnLabel.setForeground(Color.GREEN);
-            enableThrow();
+        } else if (isMyTurn && !hasThrowsLeft) {
+            turnLabel.setText("Bạn đã hết lượt!");
+            turnLabel.setForeground(Color.RED);
+        } else if (!hasThrowsLeft) {
+            turnLabel.setText("Bạn đã hết lượt!");
+            turnLabel.setForeground(Color.RED);
         } else {
             turnLabel.setText("Lượt của đối thủ...");
             turnLabel.setForeground(Color.GRAY);
-            disableThrow();
         }
 
         dartboardPanel.setRotationAngle(match.getBoardRotation());
@@ -204,7 +250,12 @@ public class GameView extends JFrame {
         rotateTimer = new Timer(1000, e -> {
             if (rotateTimeLeft <= 0) {
                 stopRotateTimer();
-                if (canRotate) handleRotate(); // xoay mặc định 0°
+                if (canRotate) {
+                    // Hết giờ → tự động không xoay (rotation = 0) và chuyển lượt
+                    rotateButton.setEnabled(false);
+                    canRotate = false;
+                    client.sendMessage(new Message(Message.ROTATE_BOARD, 0));
+                }
                 return;
             }
             rotateTimeLeft--;
@@ -226,75 +277,72 @@ public class GameView extends JFrame {
     }
 
     private void handleThrow() {
-    throwButton.setEnabled(false);
-    stopThrowTimer();
-    canThrow = false;
-    
-    
-    double powerLevel = powerSlider.getValue() / 100.0;
-    double aimAngle = angleSlider.getValue();
-
-    double maxDistance = DartBoardPanel.getOUTER_RADIUS(); // 180
-    double distance = powerLevel * maxDistance;
-    distance += (Math.random() - 0.5) * 20; // độ sai lệch ngẫu nhiên
-    double angleRad = Math.toRadians(aimAngle);
-    angleRad += (Math.random() - 0.5) * 0.2; // độ sai lệch góc
-
-    double x = distance * Math.cos(angleRad);
-    double y = distance * Math.sin(angleRad);
-
-    // Tính điểm dựa trên bảng bia
-    int score = dartboardPanel.calculateScore(x,  y);
-//    dartboardPanel.setLastScore(score); // cập nhật điểm mới
-
-    // Tạo kết quả ném
-    ThrowResult result = new ThrowResult(
-        currentUser.getUserId(),
-        x, y,
-        score,
-        powerLevel,
-        aimAngle
-    );
-
-    // Gửi thông điệp tới server
-    client.sendMessage(new Message(Message.THROW_DART, result));
-
-    // Lưu phi tiêu vào bảng
-    dartboardPanel.addDart(x + dartboardPanel.getWidth() / 2,
-                           y + dartboardPanel.getHeight() / 2);
-
-    disableThrow();
-}
+        throwButton.setEnabled(false);
+        stopThrowTimer();
+        canThrow = false;
+        
+        System.out.println("=== CLIENT: handleThrow() ===");
+        System.out.println("Current player ID: " + currentUser.getUserId());
+        System.out.println("Match current turn: " + match.getCurrentPlayerId());
+        
+        // Lấy các tham số từ sliders
+        double theta_deg = thetaSlider.getValue();     // Góc nâng (0-90°)
+        double phi_deg = phiSlider.getValue();         // Góc ngang (0-360°)
+        double power_percent = powerSlider.getValue(); // Power (0-100)
+        
+        System.out.println("Throw params: theta=" + theta_deg + "°, phi=" + phi_deg + "°, power=" + power_percent + "%");
+        
+        // Tạo ThrowResult với các tham số đầu vào
+        // Server sẽ tính toán vật lý và trả về kết quả
+        ThrowResult result = new ThrowResult(
+            currentUser.getUserId(),
+            theta_deg,
+            phi_deg,
+            power_percent
+        );
+        
+        // Gửi thông điệp tới server
+        client.sendMessage(new Message(Message.THROW_DART, result));
+        System.out.println("Message sent to server");
+        
+        disableThrow();
+    }
 
 
     private void handleRotate() {
         stopRotateTimer();
         rotateButton.setEnabled(false);
-        JSlider rotationSlider = new JSlider(0, 180, 0);
-        rotationSlider.setMajorTickSpacing(45);
-        rotationSlider.setPaintTicks(true);
-        rotationSlider.setPaintLabels(true);
-        rotationSlider.setSnapToTicks(true);
-        rotationSlider.setBorder(BorderFactory.createTitledBorder("Chọn góc xoay (°)"));
-
-        int result = JOptionPane.showConfirmDialog(this,
-                rotationSlider,
-                "Xoay bảng",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-
-        int rotation = (result == JOptionPane.OK_OPTION) ? rotationSlider.getValue() : 0;
-
-        client.sendMessage(new Message(Message.ROTATE_BOARD, rotation));
-
         canRotate = false;
         
-        if (match.getPlayer1ThrowsLeft() <= 0 && match.getPlayer2ThrowsLeft() <= 0) {
-            client.sendMessage(new Message(Message.GAME_OVER));
-            return;
-        }
+        // Hỏi người chơi có muốn xoay bảng không
+        int choice = JOptionPane.showConfirmDialog(this,
+                "Bạn có muốn xoay bảng để gây khó cho đối thủ không?",
+                "Xoay bảng",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+        
+        int rotation = 0;
+        
+        if (choice == JOptionPane.YES_OPTION) {
+            // Cho phép chọn góc xoay
+            JSlider rotationSlider = new JSlider(0, 180, 0);
+            rotationSlider.setMajorTickSpacing(45);
+            rotationSlider.setPaintTicks(true);
+            rotationSlider.setPaintLabels(true);
+            rotationSlider.setSnapToTicks(true);
+            rotationSlider.setBorder(BorderFactory.createTitledBorder("Chọn góc xoay (°)"));
 
-        client.sendMessage(new Message(Message.TURN_CHANGED, match));
+            int result = JOptionPane.showConfirmDialog(this,
+                    rotationSlider,
+                    "Chọn góc xoay bảng",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE);
+
+            rotation = (result == JOptionPane.OK_OPTION) ? rotationSlider.getValue() : 0;
+        }
+        
+        // Gửi góc xoay (có thể là 0 nếu không xoay)
+        client.sendMessage(new Message(Message.ROTATE_BOARD, rotation));
     }
 
     private void handleExit() {
@@ -312,21 +360,57 @@ public class GameView extends JFrame {
     private void handleServerMessage(Message message) {
         SwingUtilities.invokeLater(() -> {
             switch (message.getType()) {
+                case Message.GAME_START:
+                    // Xử lý khi game bắt đầu (trường hợp được gửi lại)
+                    match = (GameMatch) message.getData();
+                    System.out.println("=== CLIENT: GAME_START received ===");
+                    System.out.println("Match current turn: " + match.getCurrentPlayerId());
+                    System.out.println("My ID: " + currentUser.getUserId());
+                    updateGameState();
+                    
+                    // Enable throw nếu là lượt của mình
+                    if (match.getCurrentPlayerId() == currentUser.getUserId() && match.hasThrowsLeft(currentUser.getUserId())) {
+                        System.out.println("→ Enabling throw after GAME_START");
+                        enableThrow();
+                    }
+                    break;
+                    
                 case Message.THROW_RESULT:
                     ThrowResult result = (ThrowResult) message.getData();
-                    dartboardPanel.addDart(result.getX(), result.getY());
+                    
+                    // Hiển thị phi tiêu trên bảng
+                    // result.getX() và result.getY() đã được chuyển đổi sang pixels
+                    // Cần cộng thêm center offset
+                    int centerX = dartboardPanel.getWidth() / 2;
+                    int centerY = dartboardPanel.getHeight() / 2;
+                    
+                    if (result.isHitBoard()) {
+                        // Thêm phi tiêu vào vị trí (centerX + x, centerY + y)
+                        dartboardPanel.addDart(centerX + result.getX(), centerY + result.getY());
+                    }
 
                     if (result.getPlayerId() == currentUser.getUserId()) {
+                        String msg = result.isHitBoard() 
+                            ? String.format("Bạn ghi được: %d điểm!\nKhoảng cách đến tâm: %.2f cm", 
+                                result.getScore(), result.getR() * 100)
+                            : "Trượt! Không trúng bảng.";
+                        
                         JOptionPane.showMessageDialog(this,
-                                "Bạn ghi được: " + result.getScore() + " điểm!",
+                                msg,
                                 "Kết quả ném",
                                 JOptionPane.INFORMATION_MESSAGE);
 
                         canRotate = true;
                         rotateButton.setEnabled(true);
+                        startRotateTimer();
                     } else {
+                        String msg = result.isHitBoard()
+                            ? String.format("Đối thủ ghi được: %d điểm!\nKhoảng cách đến tâm: %.2f cm",
+                                result.getScore(), result.getR() * 100)
+                            : "Đối thủ trượt! Không trúng bảng.";
+                        
                         JOptionPane.showMessageDialog(this,
-                                "Đối thủ ghi được: " + result.getScore() + " điểm!",
+                                msg,
                                 "Kết quả ném",
                                 JOptionPane.INFORMATION_MESSAGE);
                     }
@@ -335,20 +419,35 @@ public class GameView extends JFrame {
 
                 case Message.GAME_STATE:
                     match = (GameMatch) message.getData();
+                    System.out.println("=== CLIENT: GAME_STATE received ===");
+                    System.out.println("Current turn: " + match.getCurrentPlayerId());
+                    System.out.println("My ID: " + currentUser.getUserId());
+                    System.out.println("Can rotate: " + canRotate);
+                    
                     updateGameState();
-                    if(match.getCurrentPlayerId() == currentUser.getUserId()){
-                        enableThrow();
-                    }
-                    else{
-                        disableThrow();
-                    }
+                    
+                    // *** KHÔNG enable throw button ở đây ***
+                    // Vì GAME_STATE được gửi NGAY SAU KHI NÉM
+                    // currentPlayerId vẫn là người vừa ném, nhưng họ phải xoay bảng trước
+                    // Chỉ enable throw khi nhận TURN_CHANGED (sau khi xoay bảng)
                     break;
 
                 case Message.TURN_CHANGED:
                     match = (GameMatch) message.getData();
+                    System.out.println("=== CLIENT: TURN_CHANGED received ===");
+                    System.out.println("New current turn: " + match.getCurrentPlayerId());
+                    System.out.println("My ID: " + currentUser.getUserId());
+                    System.out.println("Is my turn: " + (match.getCurrentPlayerId() == currentUser.getUserId()));
+                    
                     stopRotateTimer();
                     resetTurnTimer();
                     updateGameState();
+                    
+                    // Enable throw nếu đến lượt của mình
+                    if (match.getCurrentPlayerId() == currentUser.getUserId() && match.hasThrowsLeft(currentUser.getUserId())) {
+                        System.out.println("→ Enabling throw for new turn");
+                        enableThrow();
+                    }
                     break;
 
                 case Message.GAME_OVER:

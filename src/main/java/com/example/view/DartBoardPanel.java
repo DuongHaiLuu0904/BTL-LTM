@@ -24,31 +24,6 @@ public class DartBoardPanel extends JPanel {
         setBackground(Color.WHITE);
     }
 
-//    public void throwDart(double angleDeg, double power) {
-//        int centerX = getWidth() / 2;
-//        int centerY = getHeight() / 2;
-//
-//        double distance = (power / 100.0) * OUTER_RADIUS;
-//        double angleRad = Math.toRadians(angleDeg - 90);
-//
-//        double hitX = centerX + distance * Math.cos(angleRad);
-//        double hitY = centerY + distance * Math.sin(angleRad);
-//
-//        // ✅ Lưu phi tiêu vào danh sách
-//        addDart(hitX, hitY);
-//
-//        repaint();
-//        
-//        JOptionPane.showMessageDialog(this,
-//                "🎯 Bạn ném được: " + lastScore + " điểm!",
-//                "Kết quả", JOptionPane.INFORMATION_MESSAGE);
-//
-////        // ✅ Sau khi ném xong, xoay bảng ngẫu nhiên
-////        rotationAngle += random.nextInt(30) + 15;
-////        rotationAngle %= 360;
-////        repaint();
-//    }
-
     // ✅ Thêm 1 phi tiêu vào danh sách
     public void addDart(double x, double y) {
         darts.add(new Point((int) x, (int) y));
@@ -60,7 +35,6 @@ public class DartBoardPanel extends JPanel {
         darts.clear();
         repaint();
     }
-
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -194,6 +168,7 @@ public class DartBoardPanel extends JPanel {
             return 0; // Vùng trắng ngoài cùng: điểm cơ bản
         }
     }
+    
     public void rotateBoard(double deltaAngle) {
         this.rotationAngle += deltaAngle;
         this.rotationAngle %= 360; // giữ trong 0-360°

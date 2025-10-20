@@ -2,6 +2,7 @@ package com.example.tcp;
 
 import com.example.controller.GameMatchDAO;
 import com.example.controller.UserDAO;
+import com.example.controller.PhysicsCalculator;
 import com.example.model.GameMatch;
 import com.example.model.Message;
 import com.example.model.ThrowResult;
@@ -19,6 +20,7 @@ public class ClientHandler implements Runnable {
     private User currentUser;
     private UserDAO userDAO;
     private GameMatchDAO gameMatchDAO;
+    private PhysicsCalculator physicsCalculator;
     
     // Constructor khởi tạo handler cho client mới
     public ClientHandler(Socket socket, GameServer server) {
@@ -26,6 +28,7 @@ public class ClientHandler implements Runnable {
         this.server = server;
         this.userDAO = new UserDAO();
         this.gameMatchDAO = new GameMatchDAO();
+        this.physicsCalculator = new PhysicsCalculator();
         
         try {
             this.out = new ObjectOutputStream(socket.getOutputStream());
@@ -223,7 +226,7 @@ public class ClientHandler implements Runnable {
     
     // Xử lý hành động ném phi tiêu của người chơi
     private void handleThrowDart(Message message) {
-        ThrowResult throwResult = (ThrowResult) message.getData();
+        ThrowResult throwInput = (ThrowResult) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
         
         if (match == null) {
@@ -231,20 +234,51 @@ public class ClientHandler implements Runnable {
             return;
         }
         
+        System.out.println("=== THROW_DART Request ===");
+        System.out.println("Player: " + currentUser.getUsername() + " (ID: " + currentUser.getUserId() + ")");
+        System.out.println("Current turn: " + match.getCurrentPlayerId());
+        System.out.println("Match state: P1=" + match.getPlayer1ThrowsLeft() + " throws, P2=" + match.getPlayer2ThrowsLeft() + " throws");
+        
         // Xác minh đến lượt của người chơi
         if (match.getCurrentPlayerId() != currentUser.getUserId()) {
+            System.out.println("ERROR: Not player's turn!");
             sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn!"));
             return;
         }
         
-        // Tính điểm dựa trên vị trí
-        int score = calculateScore(throwResult.getX(), throwResult.getY(), 
-            match.getBoardRotation());
-        throwResult.setScore(score);
+        // Kiểm tra xem người chơi còn lượt ném không
+        if (!match.hasThrowsLeft(currentUser.getUserId())) {
+            System.out.println("ERROR: No throws left!");
+            sendMessage(new Message(Message.ERROR, "Bạn đã hết lượt ném!"));
+            return;
+        }
+        
+        // Tính toán vật lý chính xác trên server
+        // Đảm bảo playerId được set
+        throwInput.setPlayerId(currentUser.getUserId());
+        
+        // Gọi PhysicsCalculator để tính toán kết quả ném
+        ThrowResult throwResult = physicsCalculator.calculateThrow(
+            throwInput, 
+            match.getBoardRotation()
+        );
+        
+        // Lấy điểm số đã được tính
+        int score = throwResult.getScore();
+        
+        // Log debug info
+        System.out.println("Player " + currentUser.getUsername() + " threw:");
+        System.out.println("  Input: theta=" + throwInput.getTheta_deg() + "°, phi=" 
+            + throwInput.getPhi_deg() + "°, power=" + throwInput.getPower_percent() + "%");
+        System.out.println("  Result: x=" + throwResult.getX_hit() + "m, y=" 
+            + throwResult.getY_hit() + "m, r=" + throwResult.getR() + "m");
+        System.out.println("  Hit board: " + throwResult.isHitBoard() + ", Score: " + score);
         
         // Cập nhật trạng thái trận đấu
         match.addScore(currentUser.getUserId(), score);
         match.decrementThrows(currentUser.getUserId());
+        
+        System.out.println("After throw: P1=" + match.getPlayer1ThrowsLeft() + " throws, P2=" + match.getPlayer2ThrowsLeft() + " throws");
         
         // Gửi kết quả ném cho cả hai người chơi
         int opponentId = (match.getPlayer1Id() == currentUser.getUserId()) 
@@ -260,7 +294,9 @@ public class ClientHandler implements Runnable {
         if (match.isGameOver()) {
             handleGameOver(match);
         } else {
-            // Chưa chuyển lượt - cho phép người chơi hiện tại xoay bảng
+            // *** QUAN TRỌNG: GIỮ NGUYÊN currentPlayerId (CHƯA SWITCH) ***
+            // Người chơi vừa ném sẽ được quyền xoay bảng
+            // Chỉ switch player sau khi xoay bảng xong
             gameMatchDAO.updateMatchState(match);
             
             // Gửi trạng thái game đã cập nhật
@@ -276,10 +312,19 @@ public class ClientHandler implements Runnable {
         int rotation = (int) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
         
+        System.out.println("=== ROTATE_BOARD Request ===");
+        System.out.println("Player: " + currentUser.getUsername() + " (ID: " + currentUser.getUserId() + ")");
+        System.out.println("Rotation: " + rotation + "°");
+        
         if (match != null) {
+            System.out.println("Current turn before switch: " + match.getCurrentPlayerId());
+            
             match.setBoardRotation(rotation);
             match.switchPlayer(); // Bây giờ chuyển sang lượt của đối thủ
             gameMatchDAO.updateMatchState(match);
+            
+            System.out.println("Current turn after switch: " + match.getCurrentPlayerId());
+            System.out.println("Board rotation: " + match.getBoardRotation() + "°");
             
             // Thông báo cho cả hai người chơi
             int opponentId = (match.getPlayer1Id() == currentUser.getUserId()) 
@@ -291,6 +336,8 @@ public class ClientHandler implements Runnable {
             if (opponentHandler != null) {
                 opponentHandler.sendMessage(updateMsg);
             }
+            
+            System.out.println("=== Turn switched successfully ===\n");
         }
     }
     
@@ -415,46 +462,6 @@ public class ClientHandler implements Runnable {
     private void handleGetLeaderboard() {
         List<User> leaderboard = userDAO.getLeaderboard();
         sendMessage(new Message(Message.LEADERBOARD_DATA, leaderboard));
-    }
-    
-    // Tính điểm dựa trên vị trí phi tiêu đâm vào bảng
-    private int calculateScore(double x, double y, int rotation) {
-        // Tính khoảng cách từ tâm
-        double distance = Math.sqrt(x * x + y * y);
-        
-        // Các vùng trên bảng phi tiêu (đơn giản hóa)
-        // Bullseye (tâm): 50 điểm
-        // Vòng trong: 25 điểm
-        // Vòng ba lần: điểm cơ sở * 3
-        // Vòng hai lần: điểm cơ sở * 2
-        // Vùng đơn: điểm cơ sở
-        
-        if (distance <= 12.7) {
-            return 50; // Bullseye
-        } else if (distance <= 31.8) {
-            return 25; // Vòng trong
-        } else if (distance <= 170) {
-            // Tính góc và xác định giá trị phân đoạn
-            double angle = Math.toDegrees(Math.atan2(y, x));
-            angle = (angle + rotation) % 360;
-            if (angle < 0) angle += 360;
-            
-            // Các phân đoạn tiêu chuẩn trên bảng phi tiêu: 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5
-            int[] segments = {20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5};
-            int segmentIndex = (int) (angle / 18) % 20;
-            int baseValue = segments[segmentIndex];
-            
-            // Xác định vòng
-            if (distance >= 99 && distance <= 107) {
-                return baseValue * 3; // Vòng ba lần
-            } else if (distance >= 162 && distance <= 170) {
-                return baseValue * 2; // Vòng hai lần
-            } else {
-                return baseValue; // Vùng đơn
-            }
-        }
-        
-        return 0; // Trượt
     }
     
     // Gửi message đến client
