@@ -17,7 +17,6 @@ import java.util.List;
  */
 public class MatchDetailView extends JFrame {
     private int matchId;
-    private int currentUserId;
     private GameMatchDTO match;
     private GameMatchDAO matchDAO;
     private MatchThrowDetailDAO throwDAO;
@@ -31,7 +30,6 @@ public class MatchDetailView extends JFrame {
     
     public MatchDetailView(int matchId, int currentUserId) {
         this.matchId = matchId;
-        this.currentUserId = currentUserId;
         this.matchDAO = new GameMatchDAO();
         this.throwDAO = new MatchThrowDetailDAO();
         
