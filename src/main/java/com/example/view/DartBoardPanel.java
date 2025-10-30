@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class DartBoardPanel extends JPanel {
     // Bảng điểm đơn giản chia 8 sector
@@ -13,8 +14,6 @@ public class DartBoardPanel extends JPanel {
     private static final int OUTER_RADIUS = 180;
 
     private double rotationAngle = 0;
-    private final Random random = new Random();
-
     // ✅ Danh sách lưu tất cả phi tiêu
     private final List<Point> darts = new ArrayList<>();
 
