@@ -44,6 +44,27 @@ CREATE TABLE IF NOT EXISTS game_matches (
     INDEX idx_start_time (start_time DESC)
 );
 
+-- Match throw details table (Chi tiết từng lần ném trong trận đấu)
+CREATE TABLE IF NOT EXISTS match_throw_details (
+    throw_id INT PRIMARY KEY AUTO_INCREMENT,
+    match_id INT NOT NULL,
+    player_id INT NOT NULL,
+    throw_number INT NOT NULL,
+    theta_deg DOUBLE DEFAULT 0,
+    phi_deg DOUBLE DEFAULT 0,
+    power_percent DOUBLE DEFAULT 0,
+    x_hit DOUBLE DEFAULT 0,
+    y_hit DOUBLE DEFAULT 0,
+    score INT DEFAULT 0,
+    hit_board BOOLEAN DEFAULT FALSE,
+    throw_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (match_id) REFERENCES game_matches(match_id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_match (match_id),
+    INDEX idx_player (player_id),
+    INDEX idx_throw_time (throw_time DESC)
+);
+
 -- Insert some test data
 INSERT INTO users (username, password, total_score, total_wins, total_losses, total_draws) 
 VALUES 
