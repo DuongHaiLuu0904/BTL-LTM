@@ -18,6 +18,7 @@ public class LobbyView extends JFrame {
     private JButton refreshButton;
     private JButton challengeButton;
     private JButton leaderboardButton;
+    private JButton matchHistoryButton;
     private JButton logoutButton;
     private Timer refreshTimer;
     
@@ -115,6 +116,11 @@ public class LobbyView extends JFrame {
         leaderboardButton = new JButton("Bảng xếp hạng");
         leaderboardButton.addActionListener(e -> showLeaderboard());
         bottomPanel.add(leaderboardButton);
+        
+        matchHistoryButton = new JButton("Lịch Sử Trận Đấu");
+        matchHistoryButton.setFont(new Font("Arial", Font.BOLD, 12));
+        matchHistoryButton.addActionListener(e -> showMatchHistory());
+        bottomPanel.add(matchHistoryButton);
         
         logoutButton = new JButton("Đăng xuất");
         logoutButton.addActionListener(e -> handleLogout());
@@ -293,5 +299,10 @@ public class LobbyView extends JFrame {
         
         dialog.add(scrollPane);
         dialog.setVisible(true);
+    }
+    
+    private void showMatchHistory() {
+        MatchHistoryView historyView = new MatchHistoryView(currentUser.getUserId());
+        historyView.setVisible(true);
     }
 }

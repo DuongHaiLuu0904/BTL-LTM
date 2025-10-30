@@ -2,9 +2,11 @@ package com.example.tcp;
 
 import com.example.controller.DartScoreCalculator;
 import com.example.controller.GameMatchDAO;
+import com.example.controller.MatchThrowDetailDAO;
 import com.example.controller.UserDAO;
 import com.example.controller.PhysicsCalculator;
 import com.example.model.GameMatch;
+import com.example.model.MatchThrowDetail;
 import com.example.model.Message;
 import com.example.model.ThrowResult;
 import com.example.model.User;
@@ -21,6 +23,7 @@ public class ClientHandler implements Runnable {
     private User currentUser;
     private UserDAO userDAO;
     private GameMatchDAO gameMatchDAO;
+    private MatchThrowDetailDAO throwDetailDAO;
     private PhysicsCalculator physicsCalculator;
     // private DartScoreCalculator dartScoreCaculator;
             
@@ -31,6 +34,7 @@ public class ClientHandler implements Runnable {
         this.server = server;
         this.userDAO = new UserDAO();
         this.gameMatchDAO = new GameMatchDAO();
+        this.throwDetailDAO = new MatchThrowDetailDAO();
         this.physicsCalculator = new PhysicsCalculator();
         
         try {
@@ -286,6 +290,28 @@ public class ClientHandler implements Runnable {
         System.out.println("  Result: x=" + throwResult.getX_hit() + "m, y=" 
             + throwResult.getY_hit() + "m, r=" + throwResult.getR() + "m");
         System.out.println("  Hit board: " + throwResult.isHitBoard() + ", Score: " + score);
+        
+        // ✅ Lưu chi tiết lượt ném vào database
+        int throwNumber = throwDetailDAO.getNextThrowNumber(match.getMatchId(), currentUser.getUserId());
+        MatchThrowDetail throwDetail = new MatchThrowDetail(
+            match.getMatchId(),
+            currentUser.getUserId(),
+            throwNumber,
+            throwInput.getTheta_deg(),
+            throwInput.getPhi_deg(),
+            throwInput.getPower_percent(),
+            throwResult.getX_hit(),
+            throwResult.getY_hit(),
+            score,
+            throwResult.isHitBoard()
+        );
+        
+        boolean saved = throwDetailDAO.saveThrowDetail(throwDetail);
+        if (saved) {
+            System.out.println("✅ Throw detail saved to database (Throw #" + throwNumber + ")");
+        } else {
+            System.out.println("❌ Failed to save throw detail to database");
+        }
         
         // Cập nhật trạng thái trận đấu
         match.addScore(currentUser.getUserId(), score);

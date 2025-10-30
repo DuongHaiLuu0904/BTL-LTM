@@ -13,6 +13,9 @@ public class DartBoardPanel extends JPanel {
     private static final int OUTER_RADIUS = 180;
 
     private double rotationAngle = 0;
+    private final Random random = new Random();
+
+    // ✅ Danh sách lưu tất cả phi tiêu
     private final List<Point> darts = new ArrayList<>();
 
     public DartBoardPanel() {

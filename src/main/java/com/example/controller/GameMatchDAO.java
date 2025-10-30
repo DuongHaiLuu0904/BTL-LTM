@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.model.GameMatch;
+import com.example.model.GameMatchDTO;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -142,6 +143,70 @@ public class GameMatchDAO {
         return endMatch(matchId, 0, "CANCELLED");
     }
     
+    /**
+     * Get match history with player names for a player
+     * @param playerId The player ID
+     * @param limit Maximum number of matches to return
+     * @return List of GameMatchDTO with username information
+     */
+    public List<GameMatchDTO> getMatchHistoryWithNames(int playerId, int limit) {
+        List<GameMatchDTO> matches = new ArrayList<>();
+        String sql = "SELECT gm.*, " +
+                    "u1.username as player1_username, " +
+                    "u2.username as player2_username, " +
+                    "u3.username as winner_username " +
+                    "FROM game_matches gm " +
+                    "JOIN users u1 ON gm.player1_id = u1.user_id " +
+                    "JOIN users u2 ON gm.player2_id = u2.user_id " +
+                    "LEFT JOIN users u3 ON gm.winner_id = u3.user_id " +
+                    "WHERE (gm.player1_id = ? OR gm.player2_id = ?) " +
+                    "AND gm.status = 'FINISHED' " +
+                    "ORDER BY gm.end_time DESC LIMIT ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, playerId);
+            stmt.setInt(2, playerId);
+            stmt.setInt(3, limit);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                matches.add(extractMatchDTOFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return matches;
+    }
+    
+    /**
+     * Get a single match with player names
+     * @param matchId The match ID
+     * @return GameMatchDTO with username information
+     */
+    public GameMatchDTO getMatchWithNames(int matchId) {
+        String sql = "SELECT gm.*, " +
+                    "u1.username as player1_username, " +
+                    "u2.username as player2_username, " +
+                    "u3.username as winner_username " +
+                    "FROM game_matches gm " +
+                    "JOIN users u1 ON gm.player1_id = u1.user_id " +
+                    "JOIN users u2 ON gm.player2_id = u2.user_id " +
+                    "LEFT JOIN users u3 ON gm.winner_id = u3.user_id " +
+                    "WHERE gm.match_id = ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, matchId);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return extractMatchDTOFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
     // Phương thức trợ giúp để trích xuất GameMatch từ ResultSet
     private GameMatch extractMatchFromResultSet(ResultSet rs) throws SQLException {
         GameMatch match = new GameMatch();
@@ -169,5 +234,45 @@ public class GameMatchDAO {
         }
         
         return match;
+    }
+    
+    /**
+     * Extract GameMatchDTO from ResultSet with usernames
+     */
+    private GameMatchDTO extractMatchDTOFromResultSet(ResultSet rs) throws SQLException {
+        GameMatchDTO matchDTO = new GameMatchDTO();
+        matchDTO.setMatchId(rs.getInt("match_id"));
+        matchDTO.setPlayer1Id(rs.getInt("player1_id"));
+        matchDTO.setPlayer2Id(rs.getInt("player2_id"));
+        matchDTO.setPlayer1Score(rs.getInt("player1_score"));
+        matchDTO.setPlayer2Score(rs.getInt("player2_score"));
+        
+        int winnerId = rs.getInt("winner_id");
+        if (!rs.wasNull()) {
+            matchDTO.setWinnerId(winnerId);
+        }
+        
+        matchDTO.setCurrentPlayerId(rs.getInt("current_player_id"));
+        matchDTO.setPlayer1ThrowsLeft(rs.getInt("player1_throws_left"));
+        matchDTO.setPlayer2ThrowsLeft(rs.getInt("player2_throws_left"));
+        matchDTO.setBoardRotation(rs.getInt("board_rotation"));
+        matchDTO.setStatus(rs.getString("status"));
+        matchDTO.setStartTime(rs.getTimestamp("start_time"));
+        
+        Timestamp endTime = rs.getTimestamp("end_time");
+        if (endTime != null) {
+            matchDTO.setEndTime(endTime);
+        }
+        
+        // Set usernames
+        matchDTO.setPlayer1Username(rs.getString("player1_username"));
+        matchDTO.setPlayer2Username(rs.getString("player2_username"));
+        
+        String winnerUsername = rs.getString("winner_username");
+        if (winnerUsername != null) {
+            matchDTO.setWinnerUsername(winnerUsername);
+        }
+        
+        return matchDTO;
     }
 }
