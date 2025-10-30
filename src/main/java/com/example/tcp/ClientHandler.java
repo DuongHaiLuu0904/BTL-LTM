@@ -1,5 +1,6 @@
 package com.example.tcp;
 
+import com.example.controller.DartScoreCalculator;
 import com.example.controller.GameMatchDAO;
 import com.example.controller.UserDAO;
 import com.example.controller.PhysicsCalculator;
@@ -21,6 +22,8 @@ public class ClientHandler implements Runnable {
     private UserDAO userDAO;
     private GameMatchDAO gameMatchDAO;
     private PhysicsCalculator physicsCalculator;
+    // private DartScoreCalculator dartScoreCaculator;
+            
     
     // Constructor khởi tạo handler cho client mới
     public ClientHandler(Socket socket, GameServer server) {
@@ -226,6 +229,8 @@ public class ClientHandler implements Runnable {
     
     // Xử lý hành động ném phi tiêu của người chơi
     private void handleThrowDart(Message message) {
+        
+
         ThrowResult throwInput = (ThrowResult) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
         
@@ -233,7 +238,6 @@ public class ClientHandler implements Runnable {
             sendMessage(new Message(Message.ERROR, "Không tìm thấy trận đấu!"));
             return;
         }
-        
         System.out.println("=== THROW_DART Request ===");
         System.out.println("Player: " + currentUser.getUsername() + " (ID: " + currentUser.getUserId() + ")");
         System.out.println("Current turn: " + match.getCurrentPlayerId());
@@ -263,9 +267,18 @@ public class ClientHandler implements Runnable {
             match.getBoardRotation()
         );
         
-        // Lấy điểm số đã được tính
-        int score = throwResult.getScore();
-        
+//        // Lấy điểm số đã được tính
+//        int score = throwResult.getScore();
+        double pixelX = (400/2.0) + throwResult.getX();
+        double pixelY = (400/2.0) + throwResult.getY();
+        int score = DartScoreCalculator.calculateScore(
+            pixelX,
+            pixelY,
+            match.getBoardRotation(),
+            400, // chiều rộng bảng
+            400  // chiều cao bảng
+        );
+        throwResult.setScore(score);
         // Log debug info
         System.out.println("Player " + currentUser.getUsername() + " threw:");
         System.out.println("  Input: theta=" + throwInput.getTheta_deg() + "°, phi=" 
@@ -331,10 +344,18 @@ public class ClientHandler implements Runnable {
                 ? match.getPlayer2Id() : match.getPlayer1Id();
             ClientHandler opponentHandler = server.getClientHandler(opponentId);
             
-            Message updateMsg = new Message(Message.TURN_CHANGED, match);
-            sendMessage(updateMsg);
+            // Gửi thông báo về góc xoay mới
+            Message rotationMsg = new Message(Message.ROTATE_BOARD, rotation);
+            sendMessage(rotationMsg);
             if (opponentHandler != null) {
-                opponentHandler.sendMessage(updateMsg);
+                opponentHandler.sendMessage(rotationMsg);
+            }
+
+            // Gửi thông báo về việc chuyển lượt
+            Message turnMsg = new Message(Message.TURN_CHANGED, match);
+            sendMessage(turnMsg);
+            if (opponentHandler != null) {
+                opponentHandler.sendMessage(turnMsg);
             }
             
             System.out.println("=== Turn switched successfully ===\n");
