@@ -410,7 +410,7 @@ public class GameView extends JFrame {
                     
                     if (result.isHitBoard()) {
                         // Thêm phi tiêu vào vị trí (centerX + x, centerY + y)
-                        dartboardPanel.addDart(centerX + result.getX(), centerY + result.getY());
+                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX()), centerY + (int) Math.round(result.getY()));
                     }
 
                     if (result.getPlayerId() == currentUser.getUserId()) {
