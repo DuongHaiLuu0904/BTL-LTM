@@ -1,3 +1,4 @@
+
 package com.example.view;
 
 import com.example.model.GameMatch;
@@ -466,6 +467,7 @@ public class GameView extends JFrame {
 
                 case Message.REMATCH_REQUEST:
                     handleRematchRequest(message);
+                    dartboardPanel.clearDarts();
                     break;
 
                 case Message.ERROR:

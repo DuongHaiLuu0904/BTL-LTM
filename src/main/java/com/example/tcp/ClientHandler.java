@@ -1,11 +1,10 @@
 package com.example.tcp;
 
+import com.example.controller.DartScoreCalculator;
 import com.example.controller.GameMatchDAO;
-import com.example.controller.MatchThrowDetailDAO;
 import com.example.controller.UserDAO;
 import com.example.controller.PhysicsCalculator;
 import com.example.model.GameMatch;
-import com.example.model.MatchThrowDetail;
 import com.example.model.Message;
 import com.example.model.ThrowResult;
 import com.example.model.User;
@@ -22,8 +21,9 @@ public class ClientHandler implements Runnable {
     private User currentUser;
     private UserDAO userDAO;
     private GameMatchDAO gameMatchDAO;
-    private MatchThrowDetailDAO throwDetailDAO;
     private PhysicsCalculator physicsCalculator;
+    // private DartScoreCalculator dartScoreCaculator;
+            
     
     // Constructor khởi tạo handler cho client mới
     public ClientHandler(Socket socket, GameServer server) {
@@ -31,7 +31,6 @@ public class ClientHandler implements Runnable {
         this.server = server;
         this.userDAO = new UserDAO();
         this.gameMatchDAO = new GameMatchDAO();
-        this.throwDetailDAO = new MatchThrowDetailDAO();
         this.physicsCalculator = new PhysicsCalculator();
         
         try {
@@ -230,6 +229,8 @@ public class ClientHandler implements Runnable {
     
     // Xử lý hành động ném phi tiêu của người chơi
     private void handleThrowDart(Message message) {
+        
+
         ThrowResult throwInput = (ThrowResult) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
         
@@ -237,18 +238,17 @@ public class ClientHandler implements Runnable {
             sendMessage(new Message(Message.ERROR, "Không tìm thấy trận đấu!"));
             return;
         }
-        
         System.out.println("=== THROW_DART Request ===");
         System.out.println("Player: " + currentUser.getUsername() + " (ID: " + currentUser.getUserId() + ")");
         System.out.println("Current turn: " + match.getCurrentPlayerId());
         System.out.println("Match state: P1=" + match.getPlayer1ThrowsLeft() + " throws, P2=" + match.getPlayer2ThrowsLeft() + " throws");
         
-        // Xác minh đến lượt của người chơi
-        if (match.getCurrentPlayerId() != currentUser.getUserId()) {
-            System.out.println("ERROR: Not player's turn!");
-            sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn!"));
-            return;
-        }
+//        // Xác minh đến lượt của người chơi
+//        if (match.getCurrentPlayerId() != currentUser.getUserId()) {
+//            System.out.println("ERROR: Not player's turn!");
+//            sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn!"));
+//            return;
+//        }
         
         // Kiểm tra xem người chơi còn lượt ném không
         if (!match.hasThrowsLeft(currentUser.getUserId())) {
@@ -267,9 +267,14 @@ public class ClientHandler implements Runnable {
             match.getBoardRotation()
         );
         
-        // Lấy điểm số đã được tính
-        int score = throwResult.getScore();
-        
+//        // Lấy điểm số đã được tính
+//        int score = throwResult.getScore();
+        int score = DartScoreCalculator.calculateScore(
+            throwResult.getX(),
+            throwResult.getY(),
+            match.getBoardRotation()
+        );
+        throwResult.setScore(score);
         // Log debug info
         System.out.println("Player " + currentUser.getUsername() + " threw:");
         System.out.println("  Input: theta=" + throwInput.getTheta_deg() + "°, phi=" 
@@ -277,28 +282,6 @@ public class ClientHandler implements Runnable {
         System.out.println("  Result: x=" + throwResult.getX_hit() + "m, y=" 
             + throwResult.getY_hit() + "m, r=" + throwResult.getR() + "m");
         System.out.println("  Hit board: " + throwResult.isHitBoard() + ", Score: " + score);
-        
-        // ✅ Lưu chi tiết lượt ném vào database
-        int throwNumber = throwDetailDAO.getNextThrowNumber(match.getMatchId(), currentUser.getUserId());
-        MatchThrowDetail throwDetail = new MatchThrowDetail(
-            match.getMatchId(),
-            currentUser.getUserId(),
-            throwNumber,
-            throwInput.getTheta_deg(),
-            throwInput.getPhi_deg(),
-            throwInput.getPower_percent(),
-            throwResult.getX_hit(),
-            throwResult.getY_hit(),
-            score,
-            throwResult.isHitBoard()
-        );
-        
-        boolean saved = throwDetailDAO.saveThrowDetail(throwDetail);
-        if (saved) {
-            System.out.println("✅ Throw detail saved to database (Throw #" + throwNumber + ")");
-        } else {
-            System.out.println("❌ Failed to save throw detail to database");
-        }
         
         // Cập nhật trạng thái trận đấu
         match.addScore(currentUser.getUserId(), score);
@@ -345,7 +328,7 @@ public class ClientHandler implements Runnable {
         if (match != null) {
             System.out.println("Current turn before switch: " + match.getCurrentPlayerId());
             
-            match.setBoardRotation(rotation);
+            match.setBoardRotation(match.getBoardRotation() + rotation);
             match.switchPlayer(); // Bây giờ chuyển sang lượt của đối thủ
             gameMatchDAO.updateMatchState(match);
             
@@ -357,10 +340,18 @@ public class ClientHandler implements Runnable {
                 ? match.getPlayer2Id() : match.getPlayer1Id();
             ClientHandler opponentHandler = server.getClientHandler(opponentId);
             
-            Message updateMsg = new Message(Message.TURN_CHANGED, match);
-            sendMessage(updateMsg);
+            // Gửi thông báo về góc xoay mới
+            Message rotationMsg = new Message(Message.ROTATE_BOARD, rotation);
+            sendMessage(rotationMsg);
             if (opponentHandler != null) {
-                opponentHandler.sendMessage(updateMsg);
+                opponentHandler.sendMessage(rotationMsg);
+            }
+
+            // Gửi thông báo về việc chuyển lượt
+            Message turnMsg = new Message(Message.TURN_CHANGED, match);
+            sendMessage(turnMsg);
+            if (opponentHandler != null) {
+                opponentHandler.sendMessage(turnMsg);
             }
             
             System.out.println("=== Turn switched successfully ===\n");

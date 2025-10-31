@@ -178,9 +178,9 @@ public class GameMatch implements Serializable {
     // Chuyển lượt chơi sang người chơi khác
     public void switchPlayer() {
         if (currentPlayerId == player1Id) {
-            currentPlayerId = player2Id;
+            setCurrentPlayerId( player2Id);
         } else {
-            currentPlayerId = player1Id;
+            setCurrentPlayerId(player1Id);
         }
     }
     
@@ -207,11 +207,11 @@ public class GameMatch implements Serializable {
         }
     }
     
-    public void throwDart(int playerId, int score) {
-        addScore(playerId, score);
-        decrementThrows(playerId);
-        switchPlayer();
-    }
+//    public void throwDart(int playerId, int score) {
+//        addScore(playerId, score);
+//        decrementThrows(playerId);
+////        switchPlayer();
+//    }
     
     public boolean hasThrowsLeft(int playerId) {
         return playerId == player1Id ? player1ThrowsLeft > 0 : player2ThrowsLeft > 0;
