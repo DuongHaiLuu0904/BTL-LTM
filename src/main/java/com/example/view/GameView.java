@@ -145,6 +145,22 @@ public class GameView extends JFrame {
         rightPanel.add(powerSlider);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
+        final int[] direction = {1}; // 1 tăng, -1 giảm
+        Timer timer = new Timer(20, null); // 20ms cho mượt
+        timer.addActionListener(e -> {
+            int value = powerSlider.getValue();
+            value += direction[0];
+            if (value >= 100) {
+                value = 100;
+                direction[0] = -1;
+            } else if (value <= 0) {
+                value = 0;
+                direction[0] = 1;
+            }
+            powerSlider.setValue(value);
+        });
+
+        timer.start();
         // Legacy angle slider (keep for backward compatibility)
         angleSlider = new JSlider(0, 360, 90);
         angleSlider.setVisible(false);
@@ -157,7 +173,14 @@ public class GameView extends JFrame {
         
         rightPanel.add(throwButton);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        throwButton.addActionListener(e -> handleThrow());
+        throwButton.addActionListener(e -> {
+            timer.stop(); // Dừng slider
+            int power = powerSlider.getValue();
+            System.out.println("Lực ném hiện tại: " + power + "%");
+
+            handleThrow();
+            timer.start(); // Bật lại slider sau khi ném
+        });
         // Rotate button
         rotateButton = new JButton("Xoay bảng");
         rotateButton.setAlignmentX(Component.CENTER_ALIGNMENT);
