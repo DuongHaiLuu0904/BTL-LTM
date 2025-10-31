@@ -1,56 +1,31 @@
 package com.example.controller;
 
-/**
- * Lớp tính điểm phi tiêu, tương thích hoàn toàn với DartBoardPanel.
- * 
- * Cấu trúc:
- * - 8 sector (20, 15, 10, 5, 10, 15, 20, 5)
- * - Vùng đỏ (bullseye) = 50 điểm
- * - Vùng xanh = 30 điểm
- * - Ngoài vùng = 0 điểm
- * 
- * Hỗ trợ tính điểm chính xác khi bảng phi tiêu xoay.
- * 
- * @author lecao
- */
 public class DartScoreCalculator {
-// Phải trùng với DartBoardPanel
-    private static final int[] SECTOR_SCORES = {20, 15, 10, 10, 10, 15, 20, 10};
-    private static final double INNER_RADIUS = 40;
-    private static final double MIDDLE_RADIUS = 100;
-    private static final double OUTER_RADIUS = 180;
+
+    private static final int[] SECTOR_SCORES = {10, 15, 20, 10, 10, 15, 20, 10};
+    private static final double INNER_RADIUS = 40;   // pixel
+    private static final double MIDDLE_RADIUS = 100; // pixel
+    private static final double OUTER_RADIUS = 180;  // pixel
 
     /**
-     * Tính điểm theo toạ độ hit (đã ở hệ pixel của panel).
+     * Tính điểm từ tọa độ pixel, tương thích với rotation bảng
      */
-    public static int calculateScore(double x, double y, double rotationAngle,
-                                     int boardWidth, int boardHeight) {
+    public static int calculateScore(double x, double y, double rotationAngle) {
+        y = -y;
+        // Xoay ngược điểm theo rotation bảng
+        // double angleRad = Math.toRadians(rotationAngle);
+        double x_rot = x * Math.cos(rotationAngle) + y * Math.sin(rotationAngle);
+        double y_rot = -x * Math.sin(rotationAngle) + y * Math.cos(rotationAngle);
 
-        double centerX = boardWidth / 2.0;
-        double centerY = boardHeight / 2.0;
+        double r = Math.sqrt(x_rot * x_rot + y_rot * y_rot);
 
-        // Dịch gốc về tâm
-        double dx = x - centerX;
-        double dy = y - centerY;
-
-        // Java: trục Y hướng xuống => đảo chiều Y để có hướng "toán học" thuận
-        dy = -dy;
-
-        double r = Math.sqrt(dx * dx + dy * dy);
         if (r > OUTER_RADIUS) return 0;
-
-        // Vùng bullseye
         if (r <= INNER_RADIUS) return 50;
         if (r <= MIDDLE_RADIUS) return 30;
 
-        // Tính góc với 0° ở hướng lên (trục Oy âm)
-        double theta = Math.toDegrees(Math.atan2(dx, dy)); // đổi chỗ dx,dy để 0° ở hướng lên
+        double theta = Math.toDegrees(Math.atan2(x_rot, y_rot));
         if (theta < 0) theta += 360;
 
-        // Cộng góc xoay bảng (xoay thuận chiều kim đồng hồ)
-        theta = (theta + rotationAngle) % 360;
-
-        // Xác định sector
         int numSectors = SECTOR_SCORES.length;
         double sectorAngle = 360.0 / numSectors;
         int sectorIndex = (int) (theta / sectorAngle);

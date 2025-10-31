@@ -7,13 +7,12 @@ import java.util.List;
 
 public class DartBoardPanel extends JPanel {
     // Bảng điểm đơn giản chia 8 sector
-    private static final int[] SECTOR_SCORES = {20, 15, 10, 10, 10, 15, 20, 10};
+    private static final int[] SECTOR_SCORES = {10, 15, 20, 10, 10, 15, 20, 10};
     private static final int INNER_RADIUS = 40;
     private static final int MIDDLE_RADIUS = 100;
     private static final int OUTER_RADIUS = 180;
 
     private double rotationAngle = 0;
-    // ✅ Danh sách lưu tất cả phi tiêu
     private final List<Point> darts = new ArrayList<>();
 
     public DartBoardPanel() {
@@ -26,7 +25,8 @@ public class DartBoardPanel extends JPanel {
     // 🎯 PHẦN HIỂN THỊ
     // ==========================
     public void addDart(double x, double y) {
-        darts.add(new Point((int) x, (int) y));
+        System.out.println("Physics coords: x=" + x + ", y=" + y);
+        darts.add(new Point((int) Math.round(x), (int) Math.round(y)));
         repaint();
     }
 
@@ -89,9 +89,9 @@ public class DartBoardPanel extends JPanel {
         g2.drawOval(centerX - INNER_RADIUS, centerY - INNER_RADIUS, INNER_RADIUS * 2, INNER_RADIUS * 2);
 
         // Vẽ số điểm (giữ số thẳng đứng)
-        g2.translate(centerX, centerY);
-        g2.rotate(Math.toRadians(-rotationAngle));
-        g2.translate(-centerX, -centerY);
+//        g2.translate(centerX, centerY);
+//        g2.rotate(Math.toRadians(-rotationAngle));
+//        g2.translate(-centerX, -centerY);
 
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
@@ -104,9 +104,9 @@ public class DartBoardPanel extends JPanel {
         }
 
         // ✅ Vẽ phi tiêu (sau khi quay ngược lại)
-        g2.translate(centerX, centerY);
-        g2.rotate(Math.toRadians(rotationAngle));
-        g2.translate(-centerX, -centerY);
+//        g2.translate(centerX, centerY);
+//        g2.rotate(Math.toRadians(rotationAngle));
+//        g2.translate(-centerX, -centerY);
 
         g2.setColor(Color.BLACK);
         for (Point p : darts) {

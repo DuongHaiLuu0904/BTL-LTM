@@ -69,7 +69,7 @@ public class Message implements Serializable {
     public static final String LEADERBOARD_DATA = "LEADERBOARD_DATA";
     public static final String USER_STATUS_CHANGED = "USER_STATUS_CHANGED";
     public static final String ERROR = "ERROR";
-    
+    public static final String PLAYER_RETURN_TO_LOBBY = "PLAYER_RETURN_TO_LOBBY";
     // Getters and Setters
     // Lấy loại message
     public String getType() {
