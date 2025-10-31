@@ -273,9 +273,11 @@ public class ClientHandler implements Runnable {
         
 //        // Lấy điểm số đã được tính
 //        int score = throwResult.getScore();
+        int centerX = match.getDartboardWidth() / 2;
+        int centerY = match.getDartboardHeight() / 2;
         int score = DartScoreCalculator.calculateScore(
-            throwResult.getX(),
-            throwResult.getY(),
+            centerX + (int) Math.round(throwResult.getX_hit()), 
+            centerY - (int) Math.round(throwResult.getY_hit()),
             match.getBoardRotation()
         );
         throwResult.setScore(score);

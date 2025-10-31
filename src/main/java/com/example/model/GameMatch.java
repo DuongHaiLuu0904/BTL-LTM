@@ -21,7 +21,8 @@ public class GameMatch implements Serializable {
     private int player1ThrowsLeft;
     private int player2ThrowsLeft;
     private int boardRotation; // Rotation angle in degrees
-    
+    private int dartboardHeight; // Height of the dartboard panel in pixels
+    private int dartboardWidth; // Width of the dartboard panel in pixels
     // Constructor mặc định khởi tạo trạng thái chờ
     public GameMatch() {
         this.player1ThrowsLeft = 5;
@@ -219,5 +220,21 @@ public class GameMatch implements Serializable {
     
     public boolean isPlayerInMatch(int playerId) {
         return playerId == player1Id || playerId == player2Id;
+    }
+
+    public int getDartboardHeight() {
+        return dartboardHeight;
+    }
+
+    public void setDartboardHeight(int dartboardHeight) {
+        this.dartboardHeight = dartboardHeight;
+    }
+
+    public int getDartboardWidth() {
+        return dartboardWidth;
+    }
+
+    public void setDartboardWidth(int dartboardWidth) {
+        this.dartboardWidth = dartboardWidth;
     }
 }
