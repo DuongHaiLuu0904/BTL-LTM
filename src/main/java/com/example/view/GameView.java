@@ -116,23 +116,23 @@ public class GameView extends JFrame {
 
         // Theta slider (góc ném đứng - elevation angle)
         // Range: -10° to +10° for fine control, default = 0°
-        thetaSlider = new JSlider(-10, 10, 0);
+        thetaSlider = new JSlider(0, 10, 0);
         thetaSlider.setMajorTickSpacing(5);
         thetaSlider.setMinorTickSpacing(1);
         thetaSlider.setPaintTicks(true);
         thetaSlider.setPaintLabels(true);
-        thetaSlider.setBorder(BorderFactory.createTitledBorder("Góc nâng θ (-10° to +10°)"));
+        thetaSlider.setBorder(BorderFactory.createTitledBorder("Góc nâng θ (0° to 10°)"));
         rightPanel.add(thetaSlider);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
         // Phi slider (góc ném ngang - horizontal angle)
         // Range: -10° to +10° for fine control, default = 0°
-        phiSlider = new JSlider(-10, 10, 0);
+        phiSlider = new JSlider(-15, 15, 0);
         phiSlider.setMajorTickSpacing(5);
         phiSlider.setMinorTickSpacing(1);
         phiSlider.setPaintTicks(true);
         phiSlider.setPaintLabels(true);
-        phiSlider.setBorder(BorderFactory.createTitledBorder("Góc ngang φ (-10° to +10°)"));
+        phiSlider.setBorder(BorderFactory.createTitledBorder("Góc ngang φ (-15° to +15°)"));
         rightPanel.add(phiSlider);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
@@ -410,7 +410,7 @@ public class GameView extends JFrame {
                     
                     if (result.isHitBoard()) {
                         // Thêm phi tiêu vào vị trí (centerX + x, centerY + y)
-                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX()), centerY + (int) Math.round(result.getY()));
+                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX()), centerY - (int) Math.round(result.getY()));
                     }
 
                     if (result.getPlayerId() == currentUser.getUserId()) {

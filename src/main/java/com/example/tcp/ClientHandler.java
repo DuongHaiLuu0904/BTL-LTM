@@ -282,7 +282,8 @@ public class ClientHandler implements Runnable {
         System.out.println("  Result: x=" + throwResult.getX_hit() + "m, y=" 
             + throwResult.getY_hit() + "m, r=" + throwResult.getR() + "m");
         System.out.println("  Hit board: " + throwResult.isHitBoard() + ", Score: " + score);
-        
+        System.out.println(throwResult.getScore());
+        System.out.println(match.getBoardRotation());
         // Cập nhật trạng thái trận đấu
         match.addScore(currentUser.getUserId(), score);
         match.decrementThrows(currentUser.getUserId());

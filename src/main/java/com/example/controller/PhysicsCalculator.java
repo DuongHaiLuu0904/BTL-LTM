@@ -61,23 +61,26 @@ public class PhysicsCalculator {
         double x_hit = v0x * t_hit;
         double y_hit = v0y * t_hit - 0.5 * GRAVITY * t_hit * t_hit;
 
-        double angleRad = Math.toRadians(boardAngle_deg);
-        double x_rotated = x_hit * Math.cos(angleRad) - y_hit * Math.sin(angleRad);
-        double y_rotated = x_hit * Math.sin(angleRad) + y_hit * Math.cos(angleRad);
+//        double angleRad = Math.toRadians(boardAngle_deg);
+//        double x_rotated = x_hit * Math.cos(angleRad) - y_hit * Math.sin(angleRad);
+//        double y_rotated = x_hit * Math.sin(angleRad) + y_hit * Math.cos(angleRad);
 
-        double r = Math.sqrt(x_rotated * x_rotated + y_rotated * y_rotated);
-        boolean hitBoard = r <= boardRadius;
+//        double r = Math.sqrt(x_rotated * x_rotated + y_rotated * y_rotated);
+          double r = Math.sqrt(x_hit * x_hit + y_hit * y_hit);
+          boolean hitBoard = r <= boardRadius;
 
-        throwResult.setT_hit(t_hit);
-        throwResult.setX_hit(x_rotated);
-        throwResult.setY_hit(y_rotated);
-        throwResult.setR(r);
+//        throwResult.setT_hit(t_hit);
+//        throwResult.setX_hit(x_rotated);
+//        throwResult.setY_hit(y_rotated);
+          throwResult.setX_hit(x_hit);
+          throwResult.setY_hit(y_hit);
+//        throwResult.setR(r);
         throwResult.setHitBoard(hitBoard);
 
         // Pixel scale cho panel
         double pixelScale = 180.0 / DEFAULT_BOARD_RADIUS; // OUTER_RADIUS = 180px
-        throwResult.setX(x_rotated * pixelScale);
-        throwResult.setY(-y_rotated * pixelScale); // đảo Y để hiển thị đúng
+        throwResult.setX(x_hit * pixelScale);
+        throwResult.setY(-y_hit * pixelScale); // đảo Y để hiển thị đúng
 
         return throwResult;
     }
