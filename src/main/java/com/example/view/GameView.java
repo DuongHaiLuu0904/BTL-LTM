@@ -417,8 +417,7 @@ public class GameView extends JFrame {
 
                     if (result.getPlayerId() == currentUser.getUserId()) {
                         String msg = result.isHitBoard() 
-                            ? String.format("Bạn ghi được: %d điểm!\nKhoảng cách đến tâm: %.2f cm", 
-                                result.getScore(), result.getR() * 100)
+                            ? String.format("Bạn ghi được: %d điểm!", result.getScore())
                             : "Trượt! Không trúng bảng.";
                         
                         JOptionPane.showMessageDialog(this,
@@ -431,8 +430,7 @@ public class GameView extends JFrame {
                         startRotateTimer();
                     } else {
                         String msg = result.isHitBoard()
-                            ? String.format("Đối thủ ghi được: %d điểm!\nKhoảng cách đến tâm: %.2f cm",
-                                result.getScore(), result.getR() * 100)
+                            ? String.format("Đối thủ ghi được: %d điểm!", result.getScore())
                             : "Đối thủ trượt! Không trúng bảng.";
                         
                         JOptionPane.showMessageDialog(this,
