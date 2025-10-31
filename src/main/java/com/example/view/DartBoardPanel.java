@@ -7,7 +7,7 @@ import java.util.List;
 
 public class DartBoardPanel extends JPanel {
     // Bảng điểm đơn giản chia 8 sector
-    private static final int[] SECTOR_SCORES = {10, 15, 20, 10, 10, 15, 20, 10};
+    private static final int[] SECTOR_SCORES = {10, 20, 15, 10, 10, 20, 15, 10};
     private static final int INNER_RADIUS = 40;
     private static final int MIDDLE_RADIUS = 100;
     private static final int OUTER_RADIUS = 180;
