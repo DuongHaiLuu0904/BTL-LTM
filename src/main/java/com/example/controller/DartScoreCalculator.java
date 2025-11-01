@@ -8,27 +8,22 @@ public class DartScoreCalculator {
     private static final double OUTER_RADIUS = 180;
 
     public static int calculateScore(double x, double y, double rotationAngle) {
-        // Lật trục Y để phù hợp hệ tọa độ toán học (Oy hướng lên)
-        y = -y;
+        // Lật trục Y cho đúng hệ toán học
+        // y = -y;
 
-        // Khi bảng quay thuận chiều kim đồng hồ rotationAngle,
-        // ta xoay ngược lại tọa độ phi tiêu để đưa về hệ gốc.
-        double angleRad = Math.toRadians(-rotationAngle);
-        double x_rotated = x * Math.cos(angleRad) - y * Math.sin(angleRad);
-        double y_rotated = x * Math.sin(angleRad) + y * Math.cos(angleRad);
-
-        // Tính bán kính r từ tâm
-        double r = Math.sqrt(x_rotated * x_rotated + y_rotated * y_rotated);
-
-        // Xác định điểm theo vòng
+        // Bán kính từ tâm
+        double r = Math.sqrt(x * x + y * y);
         if (r > OUTER_RADIUS) return 0;
-        if (r <= INNER_RADIUS) return 50;  // bullseye
-        if (r <= MIDDLE_RADIUS) return 30; // vòng giữa
+        if (r <= INNER_RADIUS) return 50;
+        if (r <= MIDDLE_RADIUS) return 30;
 
-        // Tính góc theo trục Oy hướng lên (0° ở trên, tăng ngược chiều kim đồng hồ)
-        double theta = Math.toDegrees(Math.atan2(y_rotated, x_rotated));
-        theta = (360 + 90 - theta) % 360; // dịch 0° về hướng lên trên
+        // ✅ Tính góc (0° hướng lên, tăng theo chiều kim đồng hồ)
+        double theta = (450 - Math.toDegrees(Math.atan2(y, x))) % 360;
 
+        // ✅ Điều chỉnh theo góc xoay của bảng
+        theta = (theta - rotationAngle + 360) % 360;
+
+        // ✅ Xác định sector
         int numSectors = SECTOR_SCORES.length;
         double sectorAngle = 360.0 / numSectors;
         int sectorIndex = (int) (theta / sectorAngle);

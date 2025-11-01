@@ -97,9 +97,7 @@ public class GameView extends JFrame {
         turnLabel.setFont(new Font("Arial", Font.BOLD, 18));
         centerPanel.add(turnLabel, BorderLayout.NORTH);
 
-        dartboardPanel = new DartBoardPanel();
-        match.setDartboardHeight(dartboardPanel.getHeight());
-        match.setDartboardWidth(dartboardPanel.getWidth());
+            dartboardPanel = new DartBoardPanel();
         centerPanel.add(dartboardPanel, BorderLayout.CENTER);
 
         mainPanel.add(centerPanel, BorderLayout.CENTER);
@@ -409,10 +407,10 @@ public class GameView extends JFrame {
                     // Cần cộng thêm center offset
                     int centerX = dartboardPanel.getWidth() / 2;
                     int centerY = dartboardPanel.getHeight() / 2;
-
+                    
                     if (result.isHitBoard()) {
                         // Thêm phi tiêu vào vị trí (centerX + x, centerY + y)
-                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX()), centerY - (int) Math.round(result.getY()));
+                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX_hit()), centerY + (int) Math.round(result.getY_hit()));
                     }
 
                     if (result.getPlayerId() == currentUser.getUserId()) {
