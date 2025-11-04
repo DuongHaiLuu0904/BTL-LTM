@@ -3,6 +3,7 @@ package com.example.controller;
 import com.example.model.GameMatch;
 import com.example.model.GameMatchDTO;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,8 @@ public class GameMatchDAO {
             stmt.setInt(1, player1Id);
             stmt.setInt(2, player2Id);
             stmt.setInt(3, player1Id);
-            stmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            LocalDateTime now = LocalDateTime.now();
+            stmt.setObject(4,now);
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
@@ -109,7 +111,9 @@ public class GameMatchDAO {
                 stmt.setNull(1, Types.INTEGER);
             }
             stmt.setString(2, status);
-            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            
+            LocalDateTime now = LocalDateTime.now();
+            stmt.setObject(3,now);
             stmt.setInt(4, matchId);
             
             return stmt.executeUpdate() > 0;

@@ -28,7 +28,10 @@ public class GameView extends JFrame {
     private JButton rotateButton;
     private JButton exitButton;
     private JDialog gameOverDialog; 
+    private LobbyView lobbyView;
     
+    private boolean isRematchRequested = false;
+
     // Legacy
     private JSlider angleSlider;
 
@@ -40,10 +43,11 @@ public class GameView extends JFrame {
     private boolean canRotate = false;
     private int timeLeft = 30; // chung cho reset timer mỗi lượt
 
-    public GameView(GameClient client, User currentUser, GameMatch match) {
+    public GameView(GameClient client, User currentUser, GameMatch match, LobbyView lobbyView) {
         this.client = client;
         this.currentUser = currentUser;
         this.match = match;
+        this.lobbyView = lobbyView;
 
         setTitle("Game Ném Phi Tiêu - " + currentUser.getUsername());
         setSize(1000, 700);
@@ -258,8 +262,10 @@ public class GameView extends JFrame {
     }
 
     private void stopThrowTimer() {
-        if (throwTimer != null)
+        if (throwTimer != null){
             throwTimer.stop();
+            throwTimer = null;  
+        }
         timerLabel.setForeground(Color.BLACK);
     }
 
@@ -287,8 +293,10 @@ public class GameView extends JFrame {
     }
 
     private void stopRotateTimer() {
-        if (rotateTimer != null)
+        if (rotateTimer != null){
             rotateTimer.stop();
+            rotateTimer = null;
+        }
         timerLabel.setForeground(Color.BLACK);
     }
 
@@ -370,19 +378,14 @@ public class GameView extends JFrame {
         }
     }
 
+
     private void handleServerMessage(Message message) {
         SwingUtilities.invokeLater(() -> {
             switch (message.getType()) {
                 case Message.GAME_START:
                     // Xử lý khi game bắt đầu (trường hợp được gửi lại)
                     match = (GameMatch) message.getData();
-                    updateGameState();
-
-                    // Enable throw nếu là lượt của mình
-                    if (match.getCurrentPlayerId() == currentUser.getUserId()
-                            && match.hasThrowsLeft(currentUser.getUserId())) {
-                        enableThrow();
-                    }
+                    handleGameStart(match);
                     break;
 
                 case Message.THROW_RESULT:
@@ -458,7 +461,7 @@ public class GameView extends JFrame {
                 case Message.REMATCH_REQUEST:
                     handleRematchRequest(message);
                     break;
-
+                                      
                 case Message.ERROR:
                     JOptionPane.showMessageDialog(this,
                             message.getData().toString(),
@@ -486,8 +489,13 @@ public class GameView extends JFrame {
         } else {
             message = String.format("HÒA!\nĐiểm của bạn: %d\nĐiểm đối thủ: %d", myScore, opponentScore);
         }
-
+        // cập nhật LobbyView
+        if (lobbyView != null) {
+            lobbyView.updateUserInfoAndTable();
+        }
         showGameOverDialog(message);
+
+        
     }
 
     private void showGameOverDialog(String message) {
@@ -500,27 +508,29 @@ public class GameView extends JFrame {
                 "Về sảnh");
 
         gameOverDialog = optionPane.createDialog(this, "Trận đấu kết thúc");
-        gameOverDialog.setModal(true); // modal block UI, nhưng sẽ dispose ngay sau khi bấm
+        gameOverDialog.setModal(true);
         gameOverDialog.setVisible(true);
 
         Object selectedValue = optionPane.getValue();
+        if (selectedValue == null) {
+            return; // Người dùng đóng dialog
+        }
+
         if ("Chơi lại".equals(selectedValue)) {
+            isRematchRequested = true;
             int opponentId = (match.getPlayer1Id() == currentUser.getUserId())
                     ? match.getPlayer2Id()
                     : match.getPlayer1Id();
             client.sendMessage(new Message(Message.REMATCH_REQUEST, opponentId));
-            gameOverDialog.dispose(); // <--- dispose ngay lập tức
-            dartboardPanel.clearDarts();
         } else {
             gameOverDialog.dispose();
-            returnToLobby();
+            if(!currentUser.isBusy() && !isRematchRequested) returnToLobby();
         }
     }
 
     private void handleRematchRequest(Message message) {
         User requester = (User) message.getData();
 
-        // Dùng invokeLater để modal không block luồng mạng
         SwingUtilities.invokeLater(() -> {
             int response = JOptionPane.showConfirmDialog(this,
                     requester.getUsername() + " muốn chơi lại. Bạn có đồng ý không?",
@@ -533,10 +543,46 @@ public class GameView extends JFrame {
             client.sendMessage(responseMsg);
 
             if (response == JOptionPane.YES_OPTION) {
-                dartboardPanel.clearDarts();
-            } else {
-                returnToLobby();
+                isRematchRequested = true;
+                currentUser.setBusy(true);
             }
+            else {
+                if(!currentUser.isBusy() && !isRematchRequested) returnToLobby();
+            }
+        });
+    }
+
+
+    private void handleGameStart(GameMatch newMatch) {
+        SwingUtilities.invokeLater(() -> {
+            if (gameOverDialog != null) gameOverDialog.dispose();
+            dartboardPanel.clearDarts();
+
+            // Reset match và UI
+            this.match = newMatch;
+            dartboardPanel.setPlayer1Id(match.getPlayer1Id());
+
+            stopThrowTimer();
+            stopRotateTimer();
+            canThrow = false;
+            canRotate = false;
+            throwButton.setEnabled(false);
+            rotateButton.setEnabled(false);
+            thetaSlider.setValue(0);
+            phiSlider.setValue(0);
+            powerSlider.setValue(75);
+            updateGameState();
+            resetTurnTimer();
+
+            isRematchRequested = false;
+            currentUser.setBusy(true);
+            // Bật throw nếu đến lượt người chơi hiện tại
+            if (match.getCurrentPlayerId() == currentUser.getUserId()
+                    && match.hasThrowsLeft(currentUser.getUserId())) {
+                enableThrow();
+            }
+
+            JOptionPane.showMessageDialog(this, "Trận đấu mới bắt đầu!");
         });
     }
 

@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.model.MatchThrowDetail;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +30,8 @@ public class MatchThrowDetailDAO {
             stmt.setDouble(8, detail.getYHit());
             stmt.setInt(9, detail.getScore());
             stmt.setBoolean(10, detail.isHitBoard());
-            // Sử dụng thời gian hiện tại từ hệ thống Java thay vì NOW() của MySQL
-            stmt.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
+            LocalDateTime now = LocalDateTime.now();
+            stmt.setObject(11, now);
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {

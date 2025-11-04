@@ -230,13 +230,13 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // Xác minh đến lượt của người chơi
-        if (match.getCurrentPlayerId() != currentUser.getUserId()) {
-            System.out.println("❌ ERROR: Not player's turn! Current: " + match.getCurrentPlayerId()
-                    + ", Trying: " + currentUser.getUserId());
-            sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn!"));
-            return;
-        }
+//        // Xác minh đến lượt của người chơi
+//        if (match.getCurrentPlayerId() != currentUser.getUserId()) {
+//            System.out.println("❌ ERROR: Not player's turn! Current: " + match.getCurrentPlayerId()
+//                    + ", Trying: " + currentUser.getUserId());
+//            sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn!"));
+//            return;
+//        }
 
         // Kiểm tra xem người chơi còn lượt ném không
         if (!match.hasThrowsLeft(currentUser.getUserId())) {
@@ -308,9 +308,7 @@ public class ClientHandler implements Runnable {
         if (match.isGameOver()) {
             handleGameOver(match);
         } else {
-            // *** QUAN TRỌNG: GIỮ NGUYÊN currentPlayerId (CHƯA SWITCH) ***
-            // Người chơi vừa ném sẽ được quyền xoay bảng
-            // Chỉ switch player sau khi xoay bảng xong
+            // switch player sau khi xoay bảng xong
             gameMatchDAO.updateMatchState(match);
 
             // Gửi trạng thái game đã cập nhật
@@ -325,47 +323,41 @@ public class ClientHandler implements Runnable {
     private void handleRotateBoard(Message message) {
         int rotation = (int) message.getData();
         GameMatch match = gameMatchDAO.getActiveMatchForPlayer(currentUser.getUserId());
+        
+        System.out.println("=== ROTATE_BOARD Request ===");
+        System.out.println("Player: " + currentUser.getUsername() + " (ID: " + currentUser.getUserId() + ")");
+        System.out.println("Rotation: " + rotation + "°");
+        
+        if (match != null) {
+            System.out.println("Current turn before switch: " + match.getCurrentPlayerId());
+            
+            match.setBoardRotation(match.getBoardRotation() + rotation);
+            match.switchPlayer(); // Bây giờ chuyển sang lượt của đối thủ
+            gameMatchDAO.updateMatchState(match);
+            
+            System.out.println("Current turn after switch: " + match.getCurrentPlayerId());
+            System.out.println("Board rotation: " + match.getBoardRotation() + "°");
+            
+            // Thông báo cho cả hai người chơi
+            int opponentId = (match.getPlayer1Id() == currentUser.getUserId()) 
+                ? match.getPlayer2Id() : match.getPlayer1Id();
+            ClientHandler opponentHandler = server.getClientHandler(opponentId);
+            
+            // Gửi thông báo về góc xoay mới
+            Message rotationMsg = new Message(Message.ROTATE_BOARD, rotation);
+            sendMessage(rotationMsg);
+            if (opponentHandler != null) {
+                opponentHandler.sendMessage(rotationMsg);
+            }
 
-        if (match == null) {
-            sendMessage(new Message(Message.ERROR, "Không tìm thấy trận đấu!"));
-            return;
-        }
-
-        // Kiểm tra xem có phải lượt của người chơi này không (chỉ người vừa ném mới
-        // được xoay)
-        if (match.getCurrentPlayerId() != currentUser.getUserId()) {
-            System.out.println("❌ ERROR: Not player's turn to rotate! Current: " + match.getCurrentPlayerId()
-                    + ", Trying: " + currentUser.getUserId());
-            sendMessage(new Message(Message.ERROR, "Chưa đến lượt của bạn để xoay bảng!"));
-            return;
-        }
-
-        System.out.println("✅ Player " + currentUser.getUserId() + " rotating board by " + rotation + " degrees");
-        System.out.println("📍 Current turn before switch: " + match.getCurrentPlayerId());
-
-        match.setBoardRotation(match.getBoardRotation() + rotation);
-        match.switchPlayer(); // Bây giờ chuyển sang lượt của đối thủ
-        gameMatchDAO.updateMatchState(match);
-
-        System.out.println("📍 Current turn after switch: " + match.getCurrentPlayerId());
-
-        // Thông báo cho cả hai người chơi
-        int opponentId = (match.getPlayer1Id() == currentUser.getUserId()) ? match.getPlayer2Id()
-                : match.getPlayer1Id();
-        ClientHandler opponentHandler = server.getClientHandler(opponentId);
-
-        // Gửi thông báo về góc xoay mới
-        Message rotationMsg = new Message(Message.ROTATE_BOARD, rotation);
-        sendMessage(rotationMsg);
-        if (opponentHandler != null) {
-            opponentHandler.sendMessage(rotationMsg);
-        }
-
-        // Gửi thông báo về việc chuyển lượt
-        Message turnMsg = new Message(Message.TURN_CHANGED, match);
-        sendMessage(turnMsg);
-        if (opponentHandler != null) {
-            opponentHandler.sendMessage(turnMsg);
+            // Gửi thông báo về việc chuyển lượt
+            Message turnMsg = new Message(Message.TURN_CHANGED, match);
+            sendMessage(turnMsg);
+            if (opponentHandler != null) {
+                opponentHandler.sendMessage(turnMsg);
+            }
+            
+            System.out.println("=== Turn switched successfully ===\n");
         }
     }
 

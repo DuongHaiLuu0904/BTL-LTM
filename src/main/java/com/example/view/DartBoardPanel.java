@@ -94,9 +94,9 @@ public class DartBoardPanel extends JPanel {
         }
 
         // Vẽ các vòng tròn
-        g2.setColor(Color.GREEN);
+        g2.setColor(new Color(50, 255, 50));
         g2.fillOval(centerX - MIDDLE_RADIUS, centerY - MIDDLE_RADIUS, MIDDLE_RADIUS * 2, MIDDLE_RADIUS * 2);
-        g2.setColor(Color.RED);
+        g2.setColor(new Color(255, 50, 50));
         g2.fillOval(centerX - INNER_RADIUS, centerY - INNER_RADIUS, INNER_RADIUS * 2, INNER_RADIUS * 2);
 
         g2.setColor(Color.BLACK);
@@ -146,10 +146,10 @@ public class DartBoardPanel extends JPanel {
 
     private Color getSectorColor(int i) {
         switch (i % 4) {
-            case 0: return Color.YELLOW;
-            case 1: return Color.BLUE;
-            case 2: return Color.ORANGE;
-            case 3: return Color.WHITE;
+            case 0: return new Color(255, 215, 0);//vàng
+            case 1: return new Color(0, 120, 215);//xanh dương
+            case 2: return new Color(255, 128, 0);//cam
+            case 3: return new Color(245, 245, 245);//xám
             default: return Color.GRAY;
         }
     }

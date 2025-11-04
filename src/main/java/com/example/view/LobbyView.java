@@ -12,9 +12,13 @@ import java.util.List;
 public class LobbyView extends JFrame {
     private GameClient client;
     private User currentUser;
+    // Components
+    private JPanel topPanel;
+    private JPanel centerPanel;
+    private JPanel bottomPanel;
+    private JLabel userInfoLabel;
     private JTable userTable;
     private DefaultTableModel tableModel;
-    private JLabel userInfoLabel;
     private JButton refreshButton;
     private JButton challengeButton;
     private JButton leaderboardButton;
@@ -32,6 +36,41 @@ public class LobbyView extends JFrame {
         setLocationRelativeTo(null);
 
         initComponents();
+
+        // Chọn tông chữ neon duy nhất
+        Color neonText = Color.black; // neon đen
+
+        // Top panel
+        userInfoLabel.setForeground(neonText);
+        userInfoLabel.setFont(new Font("Consolas", Font.BOLD, 16));
+
+        // Center panel và bảng
+        centerPanel.setBackground(new Color(245, 245, 250));
+        userTable.setBackground(new Color(255, 255, 255)); // nền bảng trắng
+        userTable.setForeground(neonText); // chữ bảng neon đen
+        userTable.setFont(new Font("Consolas", Font.PLAIN, 14));
+        userTable.getTableHeader().setBackground(new Color(200, 220, 255)); // header nền nhạt
+        userTable.getTableHeader().setForeground(neonText); // header cũng cùng màu chữ
+        userTable.getTableHeader().setFont(new Font("Consolas", Font.BOLD, 14));
+
+        // Bottom panel và nút
+        refreshButton.setForeground(neonText);
+        challengeButton.setForeground(neonText);
+        leaderboardButton.setForeground(neonText);
+        matchHistoryButton.setForeground(neonText);
+        logoutButton.setForeground(neonText);
+
+        refreshButton.setFont(new Font("Consolas", Font.BOLD, 14));
+        challengeButton.setFont(new Font("Consolas", Font.BOLD, 14));
+        leaderboardButton.setFont(new Font("Consolas", Font.BOLD, 14));
+        matchHistoryButton.setFont(new Font("Consolas", Font.BOLD, 14));
+        logoutButton.setFont(new Font("Consolas", Font.BOLD, 14));
+
+        refreshButton.setBackground(new Color(220, 230, 255)); // nền nhẹ cho nút
+        challengeButton.setBackground(new Color(220, 230, 255));
+        leaderboardButton.setBackground(new Color(220, 230, 255));
+        matchHistoryButton.setBackground(new Color(220, 230, 255));
+        logoutButton.setBackground(new Color(220, 230, 255));
 
         // Đặt message handler cho view này
         client.setMessageHandler(this::handleServerMessage);
@@ -57,7 +96,7 @@ public class LobbyView extends JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Panel trên - Thông tin người dùng
-        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel = new JPanel(new BorderLayout());
         userInfoLabel = new JLabel(String.format(
                 "Người chơi: %s | Điểm: %d | Thắng: %d | Thua: %d | Hòa: %d",
                 currentUser.getUsername(),
@@ -71,7 +110,7 @@ public class LobbyView extends JFrame {
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // Panel giữa - Danh sách người chơi
-        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel = new JPanel(new BorderLayout());
         JLabel listLabel = new JLabel("DANH SÁCH NGƯỜI CHƠI ONLINE");
         listLabel.setFont(new Font("Arial", Font.BOLD, 16));
         listLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -102,7 +141,7 @@ public class LobbyView extends JFrame {
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
         // Panel dưới - Các nút bấm
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
         refreshButton = new JButton("Làm mới");
         refreshButton.addActionListener(e -> requestOnlineUsers());
@@ -194,6 +233,7 @@ public class LobbyView extends JFrame {
         }
     }
 
+
     @SuppressWarnings("unchecked")
     private void handleServerMessage(Message message) {
         SwingUtilities.invokeLater(() -> {
@@ -218,7 +258,7 @@ public class LobbyView extends JFrame {
                     }
                     com.example.model.GameMatch match = (com.example.model.GameMatch) message.getData();
                     dispose();
-                    new GameView(client, currentUser, match).setVisible(true);
+                    new GameView(client, currentUser, match, this).setVisible(true);
                     break;
 
                 case Message.USER_STATUS_CHANGED:
@@ -302,5 +342,19 @@ public class LobbyView extends JFrame {
     private void showMatchHistory() {
         MatchHistoryView historyView = new MatchHistoryView(currentUser.getUserId());
         historyView.setVisible(true);
+    }
+
+    public void updateUserInfoAndTable() {
+        // Cập nhật thông tin người chơi
+        userInfoLabel.setText(String.format(
+                "Người chơi: %s | Điểm: %d | Thắng: %d | Thua: %d | Hòa: %d",
+                currentUser.getUsername(),
+                currentUser.getTotalScore(),
+                currentUser.getTotalWins(),
+                currentUser.getTotalLosses(),
+                currentUser.getTotalDraws()));
+
+        // Làm mới bảng người chơi
+        requestOnlineUsers(); // gọi lại phương thức fetch danh sách online
     }
 }
