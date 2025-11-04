@@ -24,7 +24,6 @@ public class GameMatchDAO {
             stmt.setInt(1, player1Id);
             stmt.setInt(2, player2Id);
             stmt.setInt(3, player1Id);
-            // Sử dụng thời gian hiện tại từ hệ thống Java thay vì NOW() của MySQL
             stmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
 
             int affectedRows = stmt.executeUpdate();
@@ -110,10 +109,9 @@ public class GameMatchDAO {
                 stmt.setNull(1, Types.INTEGER);
             }
             stmt.setString(2, status);
-            // Sử dụng thời gian hiện tại từ hệ thống Java thay vì NOW() của MySQL
             stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(4, matchId);
-
+            
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
