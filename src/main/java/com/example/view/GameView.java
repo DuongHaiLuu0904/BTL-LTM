@@ -396,7 +396,7 @@ public class GameView extends JFrame {
                     // Cần cộng thêm center offset
                     int centerX = dartboardPanel.getWidth() / 2;
                     int centerY = dartboardPanel.getHeight() / 2;
-
+                    dartboardPanel.addFlyingDart(result.getX_hit(), result.getY_hit(), result.getPlayerId(), result.getT_hit());
                     if (result.isHitBoard()) {
                         // Thêm phi tiêu vào vị trí (centerX + x, centerY + y) với playerId
                         dartboardPanel.addDart(centerX + (int) Math.round(result.getX_hit()),

@@ -16,6 +16,9 @@ public class DartBoardPanel extends JPanel {
     private final List<DartPoint> darts = new ArrayList<>();
     private int player1Id = -1; // ID của người chơi 1 (để xác định màu)
     
+    private java.util.List<FlyingDart> flyingDarts = new java.util.ArrayList<>();
+    private Image dartImageBlue;
+    private Image dartImageRed;
     // Class để lưu thông tin phi tiêu
     private static class DartPoint {
         int x, y;
@@ -36,6 +39,14 @@ public class DartBoardPanel extends JPanel {
     public DartBoardPanel() {
         setPreferredSize(new Dimension(400, 400));
         setBackground(Color.WHITE);
+        // Load ảnh phi tiêu
+        dartImageBlue = new ImageIcon(getClass().getResource("/blue.png")).getImage();
+        dartImageRed = new ImageIcon(getClass().getResource("/red.png")).getImage();
+        Timer timer = new Timer(1000/60, e -> {
+            updateFlyingDarts();
+            repaint();
+        });
+        timer.start();
     }
     
 
@@ -45,6 +56,34 @@ public class DartBoardPanel extends JPanel {
         repaint();
     }
 
+     // Thêm phi tiêu bay
+    public void addFlyingDart(double x_hit, double y_hit, int playerId, double tHit) {
+        int centerX = getWidth() / 2;
+        int centerY = getHeight()/2;
+        int startX = centerX;
+        int startY = getHeight() - 50; 
+        int endX = centerX + (int) x_hit;
+        int endY = centerY + (int) y_hit;
+
+        FlyingDart dart = new FlyingDart(startX, startY, endX, endY, playerId, tHit);
+        flyingDarts.add(dart);
+    }
+
+    private void updateFlyingDarts(){
+        List<FlyingDart> finished = new ArrayList<>();
+        for(FlyingDart dart: flyingDarts){
+            dart.update();
+            if(dart.isFinished()){
+                addDart(dart.getCurrentX(), dart.getCurrentY(), dart.getPlayerId());
+                finished.add(dart);
+                int centerX = getWidth() / 2;
+                int centerY = getHeight() / 2;
+                darts.add(new DartPoint(dart.getCurrentX() + centerX, dart.getCurrentY() + centerY, dart.getPlayerId()));
+            }
+        }
+        flyingDarts.removeAll(finished);
+    }
+    
     public void clearDarts() {
         darts.clear();
         repaint();
@@ -79,7 +118,25 @@ public class DartBoardPanel extends JPanel {
         int numSectors = SECTOR_SCORES.length;
         double angleStep = 360.0 / numSectors;
 
-        // ✅ Xoay bảng quanh tâm
+        for(FlyingDart dart : flyingDarts) {
+            // Vẽ đường bay
+            g2.setColor(dart.getPlayerId() == player1Id ? new Color(0, 100, 255, 120) : new Color(255, 0, 0, 120));
+            g2.setStroke(new BasicStroke(2));
+            Point prev = null;
+            for(Point p : dart.getTrail()) {
+                if(prev != null) g2.drawLine(prev.x, prev.y, p.x, p.y);
+                prev = p;
+            }
+
+            // Vẽ phi tiêu
+            int size = 20;
+            int x = dart.getCurrentX() - size/2;
+            int y = dart.getCurrentY() - size/2;
+            Image img = (dart.getPlayerId() == player1Id ? dartImageBlue : dartImageRed);
+            g2.drawImage(img, x, y, size, size, null);
+        }
+        
+        // Xoay bảng quanh tâm
         g2.translate(centerX, centerY);
         g2.rotate(Math.toRadians(rotationAngle));
         g2.translate(-centerX, -centerY);
@@ -127,20 +184,14 @@ public class DartBoardPanel extends JPanel {
             g2Copy.drawString(score, -textWidth / 2, textHeight / 2);
             g2Copy.dispose();
         }
-
-
-        // Vẽ phi tiêu với màu theo người chơi
+        
+        // Vẽ các phi tiêu đã cắm trên bảng
         for (DartPoint dart : darts) {
-            // Player 1: Blue, Player 2: Red
-            if (dart.playerId == player1Id) {
-                g2.setColor(Color.BLUE);
-            } else {
-                g2.setColor(Color.RED);
-            }
-            g2.fillOval(dart.x - 5, dart.y - 5, 10, 10);
-            // Vẽ viền đen để phi tiêu rõ hơn
-            g2.setColor(Color.BLACK);
-            g2.drawOval(dart.x - 5, dart.y - 5, 10, 10);
+            int size = 20;
+            int x = dart.x - size/2;
+            int y = dart.y - size/2;
+            Image img = (dart.playerId == player1Id) ? dartImageBlue : dartImageRed;
+            g2.drawImage(img, x, y, size, size, null);
         }
     }
 
@@ -153,4 +204,6 @@ public class DartBoardPanel extends JPanel {
             default: return Color.GRAY;
         }
     }
+
+    
 }
