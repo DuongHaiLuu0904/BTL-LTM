@@ -141,16 +141,11 @@ public class DartBoardPanel extends JPanel {
 
     private Color getSectorColor(int i) {
         switch (i % 4) {
-            case 0:
-                return Color.YELLOW;
-            case 1:
-                return Color.CYAN;
-            case 2:
-                return Color.ORANGE;
-            case 3:
-                return Color.WHITE;
-            default:
-                return Color.GRAY;
+            case 0: return Color.YELLOW;
+            case 1: return Color.BLUE;
+            case 2: return Color.ORANGE;
+            case 3: return Color.WHITE;
+            default: return Color.GRAY;
         }
     }
 }
