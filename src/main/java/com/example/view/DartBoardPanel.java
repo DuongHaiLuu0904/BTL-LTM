@@ -104,10 +104,10 @@ public class DartBoardPanel extends JPanel {
         g2.drawOval(centerX - MIDDLE_RADIUS, centerY - MIDDLE_RADIUS, MIDDLE_RADIUS * 2, MIDDLE_RADIUS * 2);
         g2.drawOval(centerX - INNER_RADIUS, centerY - INNER_RADIUS, INNER_RADIUS * 2, INNER_RADIUS * 2);
 
-        // Vẽ số điểm (giữ số thẳng đứng)
-        g2.translate(centerX, centerY);
-        g2.rotate(Math.toRadians(-rotationAngle));
-        g2.translate(-centerX, -centerY);
+//        // Vẽ số điểm (giữ số thẳng đứng)
+//        g2.translate(centerX, centerY);
+//        g2.rotate(Math.toRadians(-rotationAngle));
+//        g2.translate(-centerX, -centerY);
 
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
@@ -119,10 +119,10 @@ public class DartBoardPanel extends JPanel {
             g2.drawString(String.valueOf(SECTOR_SCORES[i]), x, y);
         }
 
-        // Vẽ phi tiêu (sau khi quay ngược lại)
-        g2.translate(centerX, centerY);
-        g2.rotate(Math.toRadians(rotationAngle));
-        g2.translate(-centerX, -centerY);
+//        // Vẽ phi tiêu (sau khi quay ngược lại)
+//        g2.translate(centerX, centerY);
+//        g2.rotate(Math.toRadians(rotationAngle));
+//        g2.translate(-centerX, -centerY);
 
         // Vẽ phi tiêu với màu theo người chơi
         for (DartPoint dart : darts) {
