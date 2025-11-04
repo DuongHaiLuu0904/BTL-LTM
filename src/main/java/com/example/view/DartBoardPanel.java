@@ -27,29 +27,18 @@ public class DartBoardPanel extends JPanel {
             this.playerId = playerId;
         }
     }
-<<<<<<< HEAD
-=======
 
     // Đặt ID của người chơi 1 để xác định màu phi tiêu
     public void setPlayer1Id(int player1Id) {
         this.player1Id = player1Id;
     }
->>>>>>> LCNL/release
 
     public DartBoardPanel() {
         setPreferredSize(new Dimension(400, 400));
         setBackground(Color.WHITE);
     }
     
-    // Đặt ID của người chơi 1 để xác định màu phi tiêu
-    public void setPlayer1Id(int player1Id) {
-        this.player1Id = player1Id;
-    }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> LCNL/release
     // PHẦN HIỂN THỊ
     public void addDart(double x, double y, int playerId) {
         darts.add(new DartPoint((int) Math.round(x), (int) Math.round(y), playerId));
@@ -121,42 +110,25 @@ public class DartBoardPanel extends JPanel {
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
         FontMetrics fm = g2.getFontMetrics();
-<<<<<<< HEAD
+
         for (int i = 0; i < numSectors; i++) {
             double theta = Math.toRadians(-90 - i * angleStep - angleStep / 2);
             int r = (OUTER_RADIUS + MIDDLE_RADIUS) / 2;
             int x = (int) (centerX + r * Math.cos(theta));
             int y = (int) (centerY + r * Math.sin(theta));
-            
-            // Lưu trạng thái hiện tại
-=======
 
-        for (int i = 0; i < numSectors; i++) {
-            double theta = Math.toRadians(-90 - i * angleStep - angleStep / 2);
-            int r = (OUTER_RADIUS + MIDDLE_RADIUS) / 2;
-            int x = (int) (centerX + r * Math.cos(theta)) - 10;
-            int y = (int) (centerY + r * Math.sin(theta)) + 8;
->>>>>>> LCNL/release
-            Graphics2D g2Copy = (Graphics2D) g2.create();
-            
-            // Di chuyển đến vị trí số
-            g2Copy.translate(x, y);
-            // Xoay ngược lại để chữ số thẳng đứng
-            g2Copy.rotate(Math.toRadians(-rotationAngle));
-            
-            // Vẽ số ở tâm (căn giữa)
             String score = String.valueOf(SECTOR_SCORES[i]);
             int textWidth = fm.stringWidth(score);
             int textHeight = fm.getAscent();
+
+            Graphics2D g2Copy = (Graphics2D) g2.create();
+            g2Copy.translate(x, y);
+            g2Copy.rotate(Math.toRadians(-rotationAngle));
             g2Copy.drawString(score, -textWidth / 2, textHeight / 2);
-            
             g2Copy.dispose();
         }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> LCNL/release
         // Vẽ phi tiêu với màu theo người chơi
         for (DartPoint dart : darts) {
             // Player 1: Blue, Player 2: Red

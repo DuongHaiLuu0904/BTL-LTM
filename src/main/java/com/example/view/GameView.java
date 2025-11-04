@@ -27,11 +27,8 @@ public class GameView extends JFrame {
     private JButton throwButton;
     private JButton rotateButton;
     private JButton exitButton;
-<<<<<<< HEAD
-
-=======
     private JDialog gameOverDialog; 
->>>>>>> LCNL/release
+    
     // Legacy
     private JSlider angleSlider;
 
@@ -97,11 +94,7 @@ public class GameView extends JFrame {
         centerPanel.add(turnLabel, BorderLayout.NORTH);
 
         dartboardPanel = new DartBoardPanel();
-<<<<<<< HEAD
         dartboardPanel.setPlayer1Id(match.getPlayer1Id()); // Set ID người chơi 1 cho màu phi tiêu
-=======
-        dartboardPanel.setPlayer1Id(match.getPlayer1Id()); // Đặt ID người chơi 1
->>>>>>> LCNL/release
         centerPanel.add(dartboardPanel, BorderLayout.CENTER);
 
         mainPanel.add(centerPanel, BorderLayout.CENTER);
@@ -402,10 +395,6 @@ public class GameView extends JFrame {
                     int centerY = dartboardPanel.getHeight() / 2;
 
                     if (result.isHitBoard()) {
-<<<<<<< HEAD
-=======
-                        // Thêm phi tiêu vào vị trí (centerX + x, centerY + y)
->>>>>>> LCNL/release
                         // Thêm phi tiêu vào vị trí (centerX + x, centerY + y) với playerId
                         dartboardPanel.addDart(centerX + (int) Math.round(result.getX_hit()),
                                 centerY + (int) Math.round(result.getY_hit()),
@@ -436,11 +425,6 @@ public class GameView extends JFrame {
                     match = (GameMatch) message.getData();
 
                     updateGameState();
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> LCNL/release
                     break;
 
                 case Message.TURN_CHANGED:
@@ -512,14 +496,8 @@ public class GameView extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE,
                 JOptionPane.YES_NO_OPTION,
                 null,
-<<<<<<< HEAD
                 new String[] { "Chơi lại", "Về sảnh" },
                 "Về sảnh");
-=======
-                new String[]{"Chơi lại", "Về sảnh"},
-                "Về sảnh"
-        );
->>>>>>> LCNL/release
 
         gameOverDialog = optionPane.createDialog(this, "Trận đấu kết thúc");
         gameOverDialog.setModal(true); // modal block UI, nhưng sẽ dispose ngay sau khi bấm
