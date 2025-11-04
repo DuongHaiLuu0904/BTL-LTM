@@ -14,7 +14,7 @@ import java.util.Random;
  * - Tâm bảng tại (0,0,D)
  */
 public class PhysicsCalculator {
-    
+
     private static final double GRAVITY = 9.81; // m/s²
     private static final double DEFAULT_BOARD_DISTANCE = 2.37; // m
     private static final double DEFAULT_BOARD_RADIUS = 0.225; // m
@@ -65,21 +65,21 @@ public class PhysicsCalculator {
         double x_rotated = x_hit * Math.cos(angleRad) - y_hit * Math.sin(angleRad);
         double y_rotated = x_hit * Math.sin(angleRad) + y_hit * Math.cos(angleRad);
 
-//        double r = Math.sqrt(x_rotated * x_rotated + y_rotated * y_rotated);
-          double r = Math.sqrt(x_hit * x_hit + y_hit * y_hit);
-          boolean hitBoard = r <= boardRadius;
+        // double r = Math.sqrt(x_rotated * x_rotated + y_rotated * y_rotated);
+        double r = Math.sqrt(x_hit * x_hit + y_hit * y_hit);
+        boolean hitBoard = r <= boardRadius;
 
-            throwResult.setT_hit(t_hit);
-//            throwResult.setX_hit(x_rotated);
-//            throwResult.setY_hit(y_rotated);
-          
-//        throwResult.setR(r);
+        throwResult.setT_hit(t_hit);
+        // throwResult.setX_hit(x_rotated);
+        // throwResult.setY_hit(y_rotated);
+
+        // throwResult.setR(r);
         throwResult.setHitBoard(hitBoard);
 
         // Pixel scale cho panel
         double pixelScale = 180.0 / DEFAULT_BOARD_RADIUS; // OUTER_RADIUS = 180px
         throwResult.setX(x_hit * pixelScale);
-        throwResult.setY(y_hit * pixelScale); 
+        throwResult.setY(y_hit * pixelScale);
         throwResult.setX_hit(x_rotated * pixelScale);
         throwResult.setY_hit(y_rotated * pixelScale);
 
@@ -95,7 +95,6 @@ public class PhysicsCalculator {
                 DEFAULT_V0_MIN,
                 DEFAULT_V0_MAX,
                 true,
-                0.5
-        );
+                0.5);
     }
 }

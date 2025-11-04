@@ -10,50 +10,47 @@ import java.util.function.Consumer;
 public class GameClient {
     private static String SERVER_HOST = "localhost";
     private static int SERVER_PORT = 5000;
-    
+
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private Consumer<Message> messageHandler;
     private boolean isConnected;
-    
+
     static {
         loadProperties();
     }
-    
-    // Tải cấu hình kết nối từ file properties
+
     private static void loadProperties() {
         Properties properties = new Properties();
-        
+
         // Thử tải từ thư mục gốc trước
         try (InputStream input = new FileInputStream("application.properties")) {
             properties.load(input);
             SERVER_HOST = properties.getProperty("server.host", "localhost");
             SERVER_PORT = Integer.parseInt(properties.getProperty("server.port", "5000"));
-            System.out.println("Loaded client configuration from application.properties");
         } catch (IOException | NumberFormatException e) {
-            // Thử tải từ classpath
-            try (InputStream input = GameClient.class.getClassLoader()
-                    .getResourceAsStream("application.properties")) {
+            try (InputStream input = GameClient.class.getClassLoader().getResourceAsStream("application.properties")) {
                 if (input != null) {
                     properties.load(input);
                     SERVER_HOST = properties.getProperty("server.host", "localhost");
                     SERVER_PORT = Integer.parseInt(properties.getProperty("server.port", "5000"));
-                    System.out.println("Loaded client configuration from classpath");
                 } else {
-                    System.err.println("application.properties not found, using defaults: " + SERVER_HOST + ":" + SERVER_PORT);
+                    System.err.println(
+                            "application.properties not found, using defaults: " + SERVER_HOST + ":" + SERVER_PORT);
                 }
             } catch (IOException | NumberFormatException ex) {
-                System.err.println("Failed to load application.properties, using defaults: " + SERVER_HOST + ":" + SERVER_PORT);
+                System.err.println(
+                        "Failed to load application.properties, using defaults: " + SERVER_HOST + ":" + SERVER_PORT);
             }
         }
     }
-    
+
     // Constructor khởi tạo client với message handler
     public GameClient(Consumer<Message> messageHandler) {
         this.messageHandler = messageHandler;
     }
-    
+
     // Kết nối đến server
     public boolean connect() {
         try {
@@ -62,20 +59,19 @@ public class GameClient {
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
-            
+
             // Bắt đầu lắng nghe messages
             Thread listenerThread = new Thread(this::listenForMessages);
             listenerThread.setDaemon(true);
             listenerThread.start();
-            
-            System.out.println("Connected to server at " + SERVER_HOST + ":" + SERVER_PORT);
+
             return true;
         } catch (IOException e) {
             System.err.println("Could not connect to server: " + e.getMessage());
             return false;
         }
     }
-    
+
     // Lắng nghe messages từ server
     private void listenForMessages() {
         try {
@@ -90,13 +86,12 @@ public class GameClient {
                 System.err.println("Connection lost: " + e.getMessage());
                 isConnected = false;
                 if (messageHandler != null) {
-                    messageHandler.accept(new Message(Message.ERROR, 
-                        "Mất kết nối với server!"));
+                    messageHandler.accept(new Message(Message.ERROR, "Mất kết nối với server!"));
                 }
             }
         }
     }
-    
+
     // Gửi message đến server
     public void sendMessage(Message message) {
         try {
@@ -109,25 +104,27 @@ public class GameClient {
             e.printStackTrace();
         }
     }
-    
+
     // Đặt message handler mới cho client
     public void setMessageHandler(Consumer<Message> messageHandler) {
         this.messageHandler = messageHandler;
     }
-    
+
     // Ngắt kết nối khỏi server
     public void disconnect() {
         isConnected = false;
         try {
-            if (in != null) in.close();
-            if (out != null) out.close();
-            if (socket != null) socket.close();
-            System.out.println("Disconnected from server.");
+            if (in != null)
+                in.close();
+            if (out != null)
+                out.close();
+            if (socket != null)
+                socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
     // Kiểm tra xem client có đang kết nối không
     public boolean isConnected() {
         return isConnected && socket != null && !socket.isClosed();

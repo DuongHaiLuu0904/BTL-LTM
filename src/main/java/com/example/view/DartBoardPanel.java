@@ -7,26 +7,40 @@ import java.util.List;
 
 public class DartBoardPanel extends JPanel {
     // Bảng điểm đơn giản chia 8 sector
-    private static final int[] SECTOR_SCORES = {10, 20, 15, 10, 10, 20, 15, 10};
+    private static final int[] SECTOR_SCORES = { 10, 20, 15, 10, 10, 20, 15, 10 };
     private static final int INNER_RADIUS = 40;
     private static final int MIDDLE_RADIUS = 100;
     private static final int OUTER_RADIUS = 180;
 
     private double rotationAngle = 0;
-    private final List<Point> darts = new ArrayList<>();
+    private final List<DartPoint> darts = new ArrayList<>();
+    private int player1Id = -1; // ID của người chơi 1 (để xác định màu)
+    
+    // Class để lưu thông tin phi tiêu
+    private static class DartPoint {
+        int x, y;
+        int playerId;
+        
+        DartPoint(int x, int y, int playerId) {
+            this.x = x;
+            this.y = y;
+            this.playerId = playerId;
+        }
+    }
 
     public DartBoardPanel() {
         setPreferredSize(new Dimension(400, 400));
         setBackground(Color.WHITE);
     }
+    
+    // Đặt ID của người chơi 1 để xác định màu phi tiêu
+    public void setPlayer1Id(int player1Id) {
+        this.player1Id = player1Id;
+    }
 
-
-    // ==========================
-    // 🎯 PHẦN HIỂN THỊ
-    // ==========================
-    public void addDart(double x, double y) {
-        System.out.println("Physics coords: x=" + x + ", y=" + y);
-        darts.add(new Point((int) Math.round(x), (int) Math.round(y)));
+    // PHẦN HIỂN THỊ
+    public void addDart(double x, double y, int playerId) {
+        darts.add(new DartPoint((int) Math.round(x), (int) Math.round(y), playerId));
         repaint();
     }
 
@@ -37,13 +51,15 @@ public class DartBoardPanel extends JPanel {
 
     public void setRotationAngle(double rotationAngle) {
         this.rotationAngle = rotationAngle % 360;
-        if (this.rotationAngle < 0) this.rotationAngle += 360;
+        if (this.rotationAngle < 0)
+            this.rotationAngle += 360;
         repaint();
     }
 
     public void rotateBoard(double deltaAngle) {
         this.rotationAngle = (this.rotationAngle + deltaAngle) % 360;
-        if (this.rotationAngle < 0) this.rotationAngle += 360; // tránh âm
+        if (this.rotationAngle < 0)
+            this.rotationAngle += 360; // tránh âm
         repaint();
     }
 
@@ -89,9 +105,9 @@ public class DartBoardPanel extends JPanel {
         g2.drawOval(centerX - INNER_RADIUS, centerY - INNER_RADIUS, INNER_RADIUS * 2, INNER_RADIUS * 2);
 
         // Vẽ số điểm (giữ số thẳng đứng)
-//        g2.translate(centerX, centerY);
-//        g2.rotate(Math.toRadians(-rotationAngle));
-//        g2.translate(-centerX, -centerY);
+        g2.translate(centerX, centerY);
+        g2.rotate(Math.toRadians(-rotationAngle));
+        g2.translate(-centerX, -centerY);
 
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
@@ -103,24 +119,38 @@ public class DartBoardPanel extends JPanel {
             g2.drawString(String.valueOf(SECTOR_SCORES[i]), x, y);
         }
 
-        // ✅ Vẽ phi tiêu (sau khi quay ngược lại)
-//        g2.translate(centerX, centerY);
-//        g2.rotate(Math.toRadians(rotationAngle));
-//        g2.translate(-centerX, -centerY);
+        // Vẽ phi tiêu (sau khi quay ngược lại)
+        g2.translate(centerX, centerY);
+        g2.rotate(Math.toRadians(rotationAngle));
+        g2.translate(-centerX, -centerY);
 
-        g2.setColor(Color.BLACK);
-        for (Point p : darts) {
-            g2.fillOval(p.x - 5, p.y - 5, 10, 10);
+        // Vẽ phi tiêu với màu theo người chơi
+        for (DartPoint dart : darts) {
+            // Player 1: Blue, Player 2: Red
+            if (dart.playerId == player1Id) {
+                g2.setColor(Color.BLUE);
+            } else {
+                g2.setColor(Color.RED);
+            }
+            g2.fillOval(dart.x - 5, dart.y - 5, 10, 10);
+            // Vẽ viền đen để phi tiêu rõ hơn
+            g2.setColor(Color.BLACK);
+            g2.drawOval(dart.x - 5, dart.y - 5, 10, 10);
         }
     }
 
     private Color getSectorColor(int i) {
         switch (i % 4) {
-            case 0: return Color.YELLOW;
-            case 1: return Color.BLUE;
-            case 2: return Color.ORANGE;
-            case 3: return Color.WHITE;
-            default: return Color.GRAY;
+            case 0:
+                return Color.YELLOW;
+            case 1:
+                return Color.CYAN;
+            case 2:
+                return Color.ORANGE;
+            case 3:
+                return Color.WHITE;
+            default:
+                return Color.GRAY;
         }
     }
 }

@@ -12,17 +12,17 @@ public class DatabaseConnection {
     private static String URL;
     private static String USERNAME;
     private static String PASSWORD;
-    
+
     private static DatabaseConnection instance;
     private Connection connection;
-    
+
     static {
         loadProperties();
     }
-    
+
     private static void loadProperties() {
         Properties properties = new Properties();
-        
+
         // Try to load from root directory first
         try (InputStream input = new FileInputStream("application.properties")) {
             properties.load(input);
@@ -53,7 +53,7 @@ public class DatabaseConnection {
             }
         }
     }
-    
+
     private DatabaseConnection() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -67,25 +67,25 @@ public class DatabaseConnection {
             e.printStackTrace();
         }
     }
-    
+
     public static DatabaseConnection getInstance() {
         if (instance == null || !isConnectionValid()) {
             instance = new DatabaseConnection();
         }
         return instance;
     }
-    
+
     private static boolean isConnectionValid() {
         try {
-            return instance != null && 
-                   instance.connection != null && 
-                   !instance.connection.isClosed() && 
-                   instance.connection.isValid(2);
+            return instance != null &&
+                    instance.connection != null &&
+                    !instance.connection.isClosed() &&
+                    instance.connection.isValid(2);
         } catch (SQLException e) {
             return false;
         }
     }
-    
+
     public Connection getConnection() {
         try {
             if (connection == null || connection.isClosed()) {
@@ -96,7 +96,7 @@ public class DatabaseConnection {
         }
         return connection;
     }
-    
+
     public void closeConnection() {
         try {
             if (connection != null && !connection.isClosed()) {
