@@ -18,13 +18,14 @@ public class GameMatchDAO {
     public int createMatch(int player1Id, int player2Id) {
         String sql = "INSERT INTO game_matches (player1_id, player2_id, player1_score, player2_score, " +
                     "current_player_id, player1_throws_left, player2_throws_left, board_rotation, " +
-                    "status, start_time) VALUES (?, ?, 0, 0, ?, 5, 5, 0, 'PLAYING', NOW())";
+                    "status, start_time) VALUES (?, ?, 0, 0, ?, 5, 5, 0, 'PLAYING', ?)";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, player1Id);
             stmt.setInt(2, player2Id);
             stmt.setInt(3, player1Id);
-            
+            stmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 ResultSet rs = stmt.getGeneratedKeys();
@@ -98,7 +99,7 @@ public class GameMatchDAO {
     
     // End match
     public boolean endMatch(int matchId, int winnerId, String status) {
-        String sql = "UPDATE game_matches SET winner_id = ?, status = ?, end_time = NOW() " +
+        String sql = "UPDATE game_matches SET winner_id = ?, status = ?, end_time = ? " +
                     "WHERE match_id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -108,7 +109,8 @@ public class GameMatchDAO {
                 stmt.setNull(1, Types.INTEGER);
             }
             stmt.setString(2, status);
-            stmt.setInt(3, matchId);
+            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stmt.setInt(4, matchId);
             
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {

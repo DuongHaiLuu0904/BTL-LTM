@@ -21,13 +21,13 @@ public class GameView extends JFrame {
     private JLabel player2Label;
     private JLabel turnLabel;
     private JLabel timerLabel;
-    private JSlider thetaSlider;   // Góc ném đứng (elevation)
-    private JSlider phiSlider;     // Góc ném ngang (horizontal)
+    private JSlider thetaSlider; // Góc ném đứng (elevation)
+    private JSlider phiSlider; // Góc ném ngang (horizontal)
     private JSlider powerSlider;
     private JButton throwButton;
     private JButton rotateButton;
     private JButton exitButton;
-    
+    private JDialog gameOverDialog; 
     // Legacy
     private JSlider angleSlider;
 
@@ -97,7 +97,8 @@ public class GameView extends JFrame {
         turnLabel.setFont(new Font("Arial", Font.BOLD, 18));
         centerPanel.add(turnLabel, BorderLayout.NORTH);
 
-            dartboardPanel = new DartBoardPanel();
+        dartboardPanel = new DartBoardPanel();
+        dartboardPanel.setPlayer1Id(match.getPlayer1Id()); // Đặt ID người chơi 1
         centerPanel.add(dartboardPanel, BorderLayout.CENTER);
 
         mainPanel.add(centerPanel, BorderLayout.CENTER);
@@ -410,7 +411,10 @@ public class GameView extends JFrame {
                     
                     if (result.isHitBoard()) {
                         // Thêm phi tiêu vào vị trí (centerX + x, centerY + y)
-                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX_hit()), centerY + (int) Math.round(result.getY_hit()));
+                        // Thêm phi tiêu vào vị trí (centerX + x, centerY + y) với playerId
+                        dartboardPanel.addDart(centerX + (int) Math.round(result.getX_hit()),
+                                centerY + (int) Math.round(result.getY_hit()),
+                                result.getPlayerId());
                     }
 
                     if (result.getPlayerId() == currentUser.getUserId()) {
@@ -448,10 +452,6 @@ public class GameView extends JFrame {
                     
                     updateGameState();
                     
-                    // *** KHÔNG enable throw button ở đây ***
-                    // Vì GAME_STATE được gửi NGAY SAU KHI NÉM
-                    // currentPlayerId vẫn là người vừa ném, nhưng họ phải xoay bảng trước
-                    // Chỉ enable throw khi nhận TURN_CHANGED (sau khi xoay bảng)
                     break;
 
                 case Message.TURN_CHANGED:
@@ -488,7 +488,6 @@ public class GameView extends JFrame {
 
                 case Message.REMATCH_REQUEST:
                     handleRematchRequest(message);
-                    dartboardPanel.clearDarts();
                     break;
 
                 case Message.ERROR:
@@ -519,20 +518,32 @@ public class GameView extends JFrame {
             message = String.format("HÒA!\nĐiểm của bạn: %d\nĐiểm đối thủ: %d", myScore, opponentScore);
         }
 
-        int choice = JOptionPane.showOptionDialog(this,
+        showGameOverDialog(message);
+    }
+
+    private void showGameOverDialog(String message) {
+        JOptionPane optionPane = new JOptionPane(
                 message + "\nBạn có muốn chơi lại không?",
-                "Trận đấu kết thúc",
-                JOptionPane.YES_NO_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
+                JOptionPane.YES_NO_OPTION,
                 null,
                 new String[]{"Chơi lại", "Về sảnh"},
-                "Về sảnh");
+                "Về sảnh"
+        );
 
-        if (choice == 0) {
+        gameOverDialog = optionPane.createDialog(this, "Trận đấu kết thúc");
+        gameOverDialog.setModal(true); // modal block UI, nhưng sẽ dispose ngay sau khi bấm
+        gameOverDialog.setVisible(true);
+
+        Object selectedValue = optionPane.getValue();
+        if ("Chơi lại".equals(selectedValue)) {
             int opponentId = (match.getPlayer1Id() == currentUser.getUserId())
                     ? match.getPlayer2Id() : match.getPlayer1Id();
             client.sendMessage(new Message(Message.REMATCH_REQUEST, opponentId));
+            gameOverDialog.dispose(); // <--- dispose ngay lập tức
+            dartboardPanel.clearDarts();
         } else {
+            gameOverDialog.dispose();
             returnToLobby();
         }
     }
@@ -540,19 +551,24 @@ public class GameView extends JFrame {
     private void handleRematchRequest(Message message) {
         User requester = (User) message.getData();
 
-        int response = JOptionPane.showConfirmDialog(this,
-                requester.getUsername() + " muốn chơi lại. Bạn có đồng ý không?",
-                "Lời mời chơi lại",
-                JOptionPane.YES_NO_OPTION);
+        // Dùng invokeLater để modal không block luồng mạng
+        SwingUtilities.invokeLater(() -> {
+            int response = JOptionPane.showConfirmDialog(this,
+                    requester.getUsername() + " muốn chơi lại. Bạn có đồng ý không?",
+                    "Lời mời chơi lại",
+                    JOptionPane.YES_NO_OPTION);
 
-        String responseStr = (response == JOptionPane.YES_OPTION) ? "ACCEPTED" : "REJECTED";
-        Message responseMsg = new Message(Message.REMATCH_RESPONSE,
-                responseStr, currentUser.getUserId(), message.getSenderId());
-        client.sendMessage(responseMsg);
+            String responseStr = (response == JOptionPane.YES_OPTION) ? "ACCEPTED" : "REJECTED";
+            Message responseMsg = new Message(Message.REMATCH_RESPONSE,
+                    responseStr, currentUser.getUserId(), message.getSenderId());
+            client.sendMessage(responseMsg);
 
-        if (response == JOptionPane.NO_OPTION) {
-            returnToLobby();
-        }
+            if (response == JOptionPane.YES_OPTION) {
+                dartboardPanel.clearDarts();
+            } else {
+                returnToLobby();
+            }
+        });
     }
 
     private void returnToLobby() {

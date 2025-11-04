@@ -173,7 +173,7 @@ public class MatchDetailView extends JFrame {
                          match.getWinnerId() == match.getPlayer1Id());
         updatePlayerLabel(player2Label, match.getPlayer2Username(), match.getPlayer2Score(),
                          match.getWinnerId() == match.getPlayer2Id());
-        
+        dartBoardPanel.setPlayer1Id(match.getPlayer1Id());
         // Load throw details
         loadThrowDetails();
     }
@@ -220,16 +220,13 @@ public class MatchDetailView extends JFrame {
         if (selectedRow < throwList.size()) {
             MatchThrowDetail throwDetail = throwList.get(selectedRow);
             
-            // Convert hit coordinates to pixel coordinates for display
-            // xHit and yHit are in meters, need to convert to pixels
-            double pixelScale = 180.0 / 0.225; // 180 pixels / 0.225m
             int centerX = dartBoardPanel.getWidth() / 2;
             int centerY = dartBoardPanel.getHeight() / 2;
             
-            double x = centerX + throwDetail.getXHit() * pixelScale;
-            double y = centerY - throwDetail.getYHit() * pixelScale; // Invert Y
-            
-            dartBoardPanel.addDart(x, y);
+            double x = centerX + throwDetail.getXHit();
+            double y = centerY + throwDetail.getYHit();
+
+            dartBoardPanel.addDart(x, y, throwDetail.getPlayerId());
         }
     }
     
@@ -238,14 +235,13 @@ public class MatchDetailView extends JFrame {
         
         List<MatchThrowDetail> throwList = throwDAO.getThrowDetailsByMatch(matchId);
         
-        double pixelScale = 180.0 / 0.225;
         int centerX = dartBoardPanel.getWidth() / 2;
         int centerY = dartBoardPanel.getHeight() / 2;
         
         for (MatchThrowDetail throwDetail : throwList) {
-            double x = centerX + throwDetail.getXHit() * pixelScale;
-            double y = centerY - throwDetail.getYHit() * pixelScale;
-            dartBoardPanel.addDart(x, y);
+            double x = centerX + throwDetail.getXHit();
+            double y = centerY + throwDetail.getYHit();
+            dartBoardPanel.addDart(x, y, throwDetail.getPlayerId());
         }
     }
     

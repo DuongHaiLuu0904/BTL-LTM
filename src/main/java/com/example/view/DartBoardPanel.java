@@ -13,7 +13,25 @@ public class DartBoardPanel extends JPanel {
     private static final int OUTER_RADIUS = 180;
 
     private double rotationAngle = 0;
-    private final List<Point> darts = new ArrayList<>();
+    private final List<DartPoint> darts = new ArrayList<>();
+    private int player1Id = -1; // ID của người chơi 1 (để xác định màu)
+    
+    // Class để lưu thông tin phi tiêu
+    private static class DartPoint {
+        int x, y;
+        int playerId;
+        
+        DartPoint(int x, int y, int playerId) {
+            this.x = x;
+            this.y = y;
+            this.playerId = playerId;
+        }
+    }
+
+    // Đặt ID của người chơi 1 để xác định màu phi tiêu
+    public void setPlayer1Id(int player1Id) {
+        this.player1Id = player1Id;
+    }
 
     public DartBoardPanel() {
         setPreferredSize(new Dimension(400, 400));
@@ -21,12 +39,9 @@ public class DartBoardPanel extends JPanel {
     }
 
 
-    // ==========================
-    // 🎯 PHẦN HIỂN THỊ
-    // ==========================
-    public void addDart(double x, double y) {
-        System.out.println("Physics coords: x=" + x + ", y=" + y);
-        darts.add(new Point((int) Math.round(x), (int) Math.round(y)));
+    // PHẦN HIỂN THỊ
+    public void addDart(double x, double y, int playerId) {
+        darts.add(new DartPoint((int) Math.round(x), (int) Math.round(y), playerId));
         repaint();
     }
 
@@ -89,28 +104,45 @@ public class DartBoardPanel extends JPanel {
         g2.drawOval(centerX - INNER_RADIUS, centerY - INNER_RADIUS, INNER_RADIUS * 2, INNER_RADIUS * 2);
 
         // Vẽ số điểm (giữ số thẳng đứng)
-//        g2.translate(centerX, centerY);
-//        g2.rotate(Math.toRadians(-rotationAngle));
-//        g2.translate(-centerX, -centerY);
 
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
+        FontMetrics fm = g2.getFontMetrics();
+
         for (int i = 0; i < numSectors; i++) {
             double theta = Math.toRadians(-90 - i * angleStep - angleStep / 2);
             int r = (OUTER_RADIUS + MIDDLE_RADIUS) / 2;
             int x = (int) (centerX + r * Math.cos(theta)) - 10;
             int y = (int) (centerY + r * Math.sin(theta)) + 8;
-            g2.drawString(String.valueOf(SECTOR_SCORES[i]), x, y);
+            Graphics2D g2Copy = (Graphics2D) g2.create();
+            
+            // Di chuyển đến vị trí số
+            g2Copy.translate(x, y);
+            // Xoay ngược lại để chữ số thẳng đứng
+            g2Copy.rotate(Math.toRadians(-rotationAngle));
+            
+            // Vẽ số ở tâm (căn giữa)
+            String score = String.valueOf(SECTOR_SCORES[i]);
+            int textWidth = fm.stringWidth(score);
+            int textHeight = fm.getAscent();
+            g2Copy.drawString(score, -textWidth / 2, textHeight / 2);
+            
+            g2Copy.dispose();
         }
 
-        // ✅ Vẽ phi tiêu (sau khi quay ngược lại)
-//        g2.translate(centerX, centerY);
-//        g2.rotate(Math.toRadians(rotationAngle));
-//        g2.translate(-centerX, -centerY);
 
-        g2.setColor(Color.BLACK);
-        for (Point p : darts) {
-            g2.fillOval(p.x - 5, p.y - 5, 10, 10);
+        // Vẽ phi tiêu với màu theo người chơi
+        for (DartPoint dart : darts) {
+            // Player 1: Blue, Player 2: Red
+            if (dart.playerId == player1Id) {
+                g2.setColor(Color.BLUE);
+            } else {
+                g2.setColor(Color.RED);
+            }
+            g2.fillOval(dart.x - 5, dart.y - 5, 10, 10);
+            // Vẽ viền đen để phi tiêu rõ hơn
+            g2.setColor(Color.BLACK);
+            g2.drawOval(dart.x - 5, dart.y - 5, 10, 10);
         }
     }
 
