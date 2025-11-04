@@ -16,7 +16,7 @@ public class MatchThrowDetailDAO {
         String sql = "INSERT INTO match_throw_details " +
                 "(match_id, player_id, throw_number, theta_deg, phi_deg, power_percent, " +
                 "x_hit, y_hit, score, hit_board, throw_time) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, detail.getMatchId());
@@ -29,6 +29,8 @@ public class MatchThrowDetailDAO {
             stmt.setDouble(8, detail.getYHit());
             stmt.setInt(9, detail.getScore());
             stmt.setBoolean(10, detail.isHitBoard());
+            // Sử dụng thời gian hiện tại từ hệ thống Java thay vì NOW() của MySQL
+            stmt.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {

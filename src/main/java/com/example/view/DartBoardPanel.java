@@ -104,19 +104,31 @@ public class DartBoardPanel extends JPanel {
         g2.drawOval(centerX - MIDDLE_RADIUS, centerY - MIDDLE_RADIUS, MIDDLE_RADIUS * 2, MIDDLE_RADIUS * 2);
         g2.drawOval(centerX - INNER_RADIUS, centerY - INNER_RADIUS, INNER_RADIUS * 2, INNER_RADIUS * 2);
 
-        // Vẽ số điểm (giữ số thẳng đứng)
-        g2.translate(centerX, centerY);
-        g2.rotate(Math.toRadians(-rotationAngle));
-        g2.translate(-centerX, -centerY);
-
+        // Vẽ số điểm (vị trí xoay theo bảng, nhưng chữ số giữ thẳng đứng)
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Arial", Font.BOLD, 20));
+        FontMetrics fm = g2.getFontMetrics();
         for (int i = 0; i < numSectors; i++) {
             double theta = Math.toRadians(-90 - i * angleStep - angleStep / 2);
             int r = (OUTER_RADIUS + MIDDLE_RADIUS) / 2;
-            int x = (int) (centerX + r * Math.cos(theta)) - 10;
-            int y = (int) (centerY + r * Math.sin(theta)) + 8;
-            g2.drawString(String.valueOf(SECTOR_SCORES[i]), x, y);
+            int x = (int) (centerX + r * Math.cos(theta));
+            int y = (int) (centerY + r * Math.sin(theta));
+            
+            // Lưu trạng thái hiện tại
+            Graphics2D g2Copy = (Graphics2D) g2.create();
+            
+            // Di chuyển đến vị trí số
+            g2Copy.translate(x, y);
+            // Xoay ngược lại để chữ số thẳng đứng
+            g2Copy.rotate(Math.toRadians(-rotationAngle));
+            
+            // Vẽ số ở tâm (căn giữa)
+            String score = String.valueOf(SECTOR_SCORES[i]);
+            int textWidth = fm.stringWidth(score);
+            int textHeight = fm.getAscent();
+            g2Copy.drawString(score, -textWidth / 2, textHeight / 2);
+            
+            g2Copy.dispose();
         }
 
         // Vẽ phi tiêu (sau khi quay ngược lại)
