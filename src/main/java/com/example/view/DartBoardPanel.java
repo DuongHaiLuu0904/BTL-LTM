@@ -76,15 +76,14 @@ public class DartBoardPanel extends JPanel {
             if(dart.isFinished()){
                 addDart(dart.getCurrentX(), dart.getCurrentY(), dart.getPlayerId());
                 finished.add(dart);
-                int centerX = getWidth() / 2;
-                int centerY = getHeight() / 2;
-                darts.add(new DartPoint(dart.getCurrentX() + centerX, dart.getCurrentY() + centerY, dart.getPlayerId()));
+                darts.add(new DartPoint(dart.getCurrentX(), dart.getCurrentY(), dart.getPlayerId()));
             }
         }
         flyingDarts.removeAll(finished);
     }
     
     public void clearDarts() {
+        flyingDarts.clear();
         darts.clear();
         repaint();
     }
@@ -129,9 +128,9 @@ public class DartBoardPanel extends JPanel {
             }
 
             // Vẽ phi tiêu
-            int size = 20;
-            int x = dart.getCurrentX() - size/2;
-            int y = dart.getCurrentY() - size/2;
+            int size = 40;
+            int x = dart.getCurrentX();
+            int y = dart.getCurrentY();
             Image img = (dart.getPlayerId() == player1Id ? dartImageBlue : dartImageRed);
             g2.drawImage(img, x, y, size, size, null);
         }
@@ -187,9 +186,9 @@ public class DartBoardPanel extends JPanel {
         
         // Vẽ các phi tiêu đã cắm trên bảng
         for (DartPoint dart : darts) {
-            int size = 20;
-            int x = dart.x - size/2;
-            int y = dart.y - size/2;
+            int size = 40;
+            int x = dart.x;
+            int y = dart.y - size;
             Image img = (dart.playerId == player1Id) ? dartImageBlue : dartImageRed;
             g2.drawImage(img, x, y, size, size, null);
         }
